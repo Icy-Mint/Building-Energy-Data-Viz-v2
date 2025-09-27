@@ -19,3 +19,4 @@ A React + TypeScript + Tailwind app for uploading energy simulation data (CSV) a
 ## Notes
 
 To mirror features of the reference app (Icy-Mint/Building-Energy-Data-Viz-v2), extend parsers for EnergyPlus/DOE2 and add charts for end-use breakdowns, monthly aggregates, etc.
+
