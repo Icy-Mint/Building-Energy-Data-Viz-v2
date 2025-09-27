@@ -1,13 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 type Dataset = {
   columns: string[];
   rows: Record<string, string | number>[];
 };
-
-type ChartRow = { time: string | number; value: number; series?: string };
 
 export default function Dashboard() {
   const [dataset, setDataset] = useState<Dataset | null>(null);
@@ -19,17 +16,6 @@ export default function Dashboard() {
     }
   }, []);
 
-  const chartData = useMemo<ChartRow[]>(() => {
-    if (!dataset) return [];
-    const hasEndUse = dataset.columns.includes('end_use');
-    const timeKey = dataset.columns.find(c => c.toLowerCase().includes('time')) ?? dataset.columns[0];
-    const valueKey = dataset.columns.find(c => c.toLowerCase().includes('value')) ?? dataset.columns[1];
-    return dataset.rows
-      .filter(r => typeof r[valueKey] === 'number')
-      .map(r => ({ time: (r[timeKey] as any) ?? '', value: Number(r[valueKey]), series: hasEndUse ? String(r['end_use'] ?? '') : undefined }));
-  }, [dataset]);
-
-  const seriesList = useMemo(() => Array.from(new Set(chartData.map(d => d.series ?? 'Total'))), [chartData]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -44,24 +30,6 @@ export default function Dashboard() {
         )}
         {dataset && (
           <div className="space-y-8">
-            <div className="bg-white shadow rounded p-4">
-              <h2 className="font-semibold mb-2">Time Series</h2>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    {seriesList.map((s, idx) => (
-                      <Line key={s} type="monotone" dataKey="value" name={s} data={chartData.filter(d => (d.series ?? 'Total') === s)} stroke={COLORS[idx % COLORS.length]} dot={false} />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
             <div className="bg-white shadow rounded p-4">
               <h2 className="font-semibold mb-2">Preview Table</h2>
               <div className="overflow-auto">
@@ -91,9 +59,4 @@ export default function Dashboard() {
     </div>
   );
 }
-
-const COLORS = [
-  '#2563eb', '#16a34a', '#dc2626', '#a855f7', '#f59e0b', '#0ea5e9', '#22c55e'
-];
-
 
