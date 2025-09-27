@@ -149,19 +149,6 @@ const EnergyChart: React.FC = () => {
       const y = getY(value);
       return (
         <g key={index}>
-          {/* Glow effect */}
-          <circle
-            cx={x}
-            cy={y}
-            r="8"
-            fill={color}
-            opacity="0.2"
-            style={{
-              opacity: animationProgress * 0.3,
-              transform: `scale(${animationProgress})`,
-              transition: `opacity 0.5s ease-in-out ${index * 0.1}s, transform 0.5s ease-in-out ${index * 0.1}s`
-            }}
-          />
           {/* Main dot */}
           <circle
             cx={x}
@@ -174,9 +161,6 @@ const EnergyChart: React.FC = () => {
             onMouseLeave={() => setHoveredPoint(null)}
             style={{ 
               cursor: 'pointer',
-              opacity: animationProgress,
-              transform: `scale(${animationProgress})`,
-              transition: `opacity 0.5s ease-in-out ${index * 0.1}s, transform 0.5s ease-in-out ${index * 0.1}s`,
               filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
             }}
           />
@@ -354,21 +338,6 @@ const EnergyChart: React.FC = () => {
         {createDots(data.map(d => d.future), '#52B788')}
 
 
-        {/* Vertical grey line following mouse */}
-        {mousePosition && (
-          <line
-            x1={mousePosition.x}
-            y1={padding}
-            x2={mousePosition.x}
-            y2={padding + plotHeight}
-            stroke="#d1d5db"
-            strokeWidth="1"
-            opacity="0.8"
-            style={{
-              transition: 'opacity 0.1s ease-in-out'
-            }}
-          />
-        )}
 
         {/* Hover indicators */}
         {hoveredPoint && (
