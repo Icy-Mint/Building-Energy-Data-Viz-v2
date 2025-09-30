@@ -1085,7 +1085,7 @@ export default function App() {
           </div>
           
           {/* Feature list at bottom of hero */}
-          <div className="absolute bottom-20 left-0 right-0 max-w-2xl mx-auto px-4 z-10">
+          <div className="absolute bottom-8 left-0 right-0 max-w-2xl mx-auto px-4 z-10">
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700">
               <li className="flex items-center gap-3"><Check /> Upload CSVs from various engines</li>
               <li className="flex items-center gap-3"><Check /> Time-series & end-use charts</li>
