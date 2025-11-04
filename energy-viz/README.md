@@ -1,4 +1,4 @@
-# Energy Analysis Viz
+# GreenGauge
 
 A React + TypeScript + Tailwind app for uploading energy simulation data (CSV) and exploring interactive visualizations.
 
