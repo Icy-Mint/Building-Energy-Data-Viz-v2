@@ -800,7 +800,7 @@ export default function App() {
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
               </svg>
             </div>
-            <span className="text-lg font-semibold text-black">GreenGauge</span>
+            <span className="text-lg font-semibold text-black">EnergyViz</span>
           </div>
 
           {/* Navigation Links */}

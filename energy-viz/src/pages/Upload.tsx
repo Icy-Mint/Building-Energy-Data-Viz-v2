@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import React from 'react';
 // @ts-ignore
 import Papa from 'papaparse';
 import { Link, useNavigate } from 'react-router-dom';
@@ -32,14 +31,6 @@ export type ProjectData = {
 
 type FormatType = 'iesve' | 'openstudio' | 'equest';
 
-type AdditionalCase = {
-  id: string;
-  name: string;
-  file: File | null;
-  preview: string[][];
-  fileRef: React.RefObject<HTMLInputElement>;
-};
-
 export default function Upload() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedFormat, setSelectedFormat] = useState<FormatType>('iesve');
@@ -47,9 +38,6 @@ export default function Upload() {
   const [futureFile, setFutureFile] = useState<File | null>(null);
   const [currentPreview, setCurrentPreview] = useState<string[][]>([]);
   const [futurePreview, setFuturePreview] = useState<string[][]>([]);
-  const [currentCaseName, setCurrentCaseName] = useState<string>('Current Energy Data');
-  const [futureCaseName, setFutureCaseName] = useState<string>('Future Energy Data');
-  const [additionalCases, setAdditionalCases] = useState<AdditionalCase[]>([]);
   const [projectData, setProjectData] = useState<ProjectData>({
     projectName: '',
     projectSqft: '',
@@ -82,7 +70,7 @@ export default function Upload() {
     }
   };
 
-  const handleFileUpload = (file: File, type: 'current' | 'future' | string) => {
+  const handleFileUpload = (file: File, type: 'current' | 'future') => {
     if (!file.name.toLowerCase().endsWith('.csv')) {
       setErrorMessage('Please upload a CSV file.');
       return;
@@ -90,13 +78,8 @@ export default function Upload() {
 
     if (type === 'current') {
       setCurrentFile(file);
-    } else if (type === 'future') {
-      setFutureFile(file);
     } else {
-      // Handle additional cases
-      setAdditionalCases(prev => prev.map(case_ => 
-        case_.id === type ? { ...case_, file } : case_
-      ));
+      setFutureFile(file);
     }
 
     Papa.parse(file, {
@@ -117,13 +100,8 @@ export default function Upload() {
 
           if (type === 'current') {
             setCurrentPreview(cleanedData);
-          } else if (type === 'future') {
-            setFuturePreview(cleanedData);
           } else {
-            // Handle additional cases preview
-            setAdditionalCases(prev => prev.map(case_ => 
-              case_.id === type ? { ...case_, preview: cleanedData } : case_
-            ));
+            setFuturePreview(cleanedData);
           }
         }
       },
@@ -135,34 +113,12 @@ export default function Upload() {
     e.preventDefault();
   };
 
-  const handleDrop = (e: React.DragEvent, type: 'current' | 'future' | string) => {
+  const handleDrop = (e: React.DragEvent, type: 'current' | 'future') => {
     e.preventDefault();
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       handleFileUpload(files[0], type);
     }
-  };
-
-  const addAdditionalCase = () => {
-    const newId = `additional-${Date.now()}`;
-    const newCase: AdditionalCase = {
-      id: newId,
-      name: '',
-      file: null,
-      preview: [],
-      fileRef: React.createRef<HTMLInputElement>()
-    };
-    setAdditionalCases(prev => [...prev, newCase]);
-  };
-
-  const removeAdditionalCase = (id: string) => {
-    setAdditionalCases(prev => prev.filter(case_ => case_.id !== id));
-  };
-
-  const updateAdditionalCaseName = (id: string, name: string) => {
-    setAdditionalCases(prev => prev.map(case_ => 
-      case_.id === id ? { ...case_, name } : case_
-    ));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -197,70 +153,23 @@ export default function Upload() {
         sessionStorage.setItem('dataset', JSON.stringify(dataset));
         
         // Process future file if available
-        const processFutureFile = () => {
-          if (futureFile) {
-            Papa.parse(futureFile, {
-              header: true,
-              dynamicTyping: true,
-              skipEmptyLines: true,
-              complete: (futureResults: any) => {
-                const futureData = futureResults.data as Record<string, string | number>[];
-                const futureColumns = futureResults.meta.fields ?? Object.keys(futureData[0] ?? {});
-                const futureDataset: ParsedDataset = { columns: futureColumns, rows: futureData };
-                sessionStorage.setItem('futureDataset', JSON.stringify(futureDataset));
-                processAdditionalCases();
-              },
-              error: (err: any) => setErrorMessage(err.message),
-            });
-          } else {
-            processAdditionalCases();
-          }
-        };
-
-        // Process additional cases
-        const processAdditionalCases = () => {
-          const casesToProcess = additionalCases.filter(case_ => case_.file && case_.name.trim());
-          
-          if (casesToProcess.length === 0) {
-            navigate('/dashboard');
-            return;
-          }
-
-          let processedCount = 0;
-          const allDatasets: Record<string, ParsedDataset> = {};
-
-          casesToProcess.forEach((case_) => {
-            Papa.parse(case_.file!, {
-              header: true,
-              dynamicTyping: true,
-              skipEmptyLines: true,
-              complete: (caseResults: any) => {
-                const caseData = caseResults.data as Record<string, string | number>[];
-                const caseColumns = caseResults.meta.fields ?? Object.keys(caseData[0] ?? {});
-                const caseDataset: ParsedDataset = { columns: caseColumns, rows: caseData };
-                
-                // Store with a unique key based on case name
-                const storageKey = `dataset_${case_.name.toLowerCase().replace(/\s+/g, '_')}`;
-                allDatasets[storageKey] = caseDataset;
-                sessionStorage.setItem(storageKey, JSON.stringify(caseDataset));
-                
-                processedCount++;
-                if (processedCount === casesToProcess.length) {
-                  // Store metadata about all additional cases
-                  sessionStorage.setItem('additionalCases', JSON.stringify(
-                    casesToProcess.map(c => ({ id: c.id, name: c.name, storageKey: `dataset_${c.name.toLowerCase().replace(/\s+/g, '_')}` }))
-                  ));
-                  navigate('/dashboard');
-                }
-              },
-              error: (err: any) => {
-                setErrorMessage(err.message);
-              },
-            });
+        if (futureFile) {
+          Papa.parse(futureFile, {
+            header: true,
+            dynamicTyping: true,
+            skipEmptyLines: true,
+            complete: (futureResults: any) => {
+              const futureData = futureResults.data as Record<string, string | number>[];
+              const futureColumns = futureResults.meta.fields ?? Object.keys(futureData[0] ?? {});
+              const futureDataset: ParsedDataset = { columns: futureColumns, rows: futureData };
+              sessionStorage.setItem('futureDataset', JSON.stringify(futureDataset));
+              navigate('/dashboard');
+            },
+            error: (err: any) => setErrorMessage(err.message),
           });
-        };
-
-        processFutureFile();
+        } else {
+        navigate('/dashboard');
+        }
       },
       error: (err: any) => setErrorMessage(err.message),
     });
@@ -629,19 +538,7 @@ export default function Upload() {
           {/* Current Energy Data Upload */}
           {selectedFormat === 'iesve' && (
             <div className="bg-white rounded-lg shadow p-6">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Case Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={currentCaseName}
-                  onChange={(e) => setCurrentCaseName(e.target.value)}
-                  placeholder="e.g., Current Energy Data"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-semibold"
-                />
-              </div>
+              <h3 className="text-lg font-semibold mb-4">Current Energy Data</h3>
               <p className="mb-4 text-gray-600">Upload your current energy consumption data in CSV format.</p>
               
               <div
@@ -678,19 +575,7 @@ export default function Upload() {
           {/* Future Energy Data Upload */}
           {selectedFormat === 'iesve' && (
             <div className="bg-white rounded-lg shadow p-6">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Case Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={futureCaseName}
-                  onChange={(e) => setFutureCaseName(e.target.value)}
-                  placeholder="e.g., Future Energy Data"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-semibold"
-                />
-              </div>
+              <h3 className="text-lg font-semibold mb-4">Future Energy Data</h3>
               <p className="mb-4 text-gray-600">Upload your predicted or target future energy consumption data in CSV format.</p>
               
               <div
@@ -721,84 +606,6 @@ export default function Upload() {
               )}
               
               {renderCsvPreview(futurePreview)}
-            </div>
-          )}
-
-          {/* Additional Energy Data Cases */}
-          {selectedFormat === 'iesve' && additionalCases.map((case_) => (
-            <div key={case_.id} className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex-1 mr-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Case Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={case_.name}
-                    onChange={(e) => updateAdditionalCaseName(case_.id, e.target.value)}
-                    placeholder="e.g., Energy Efficient Measures"
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeAdditionalCase(case_.id)}
-                  className="px-4 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
-                  title="Remove this case"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
-              <p className="mb-4 text-gray-600">Upload your energy consumption data in CSV format for this case.</p>
-              
-              <div
-                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition-colors"
-                onClick={() => case_.fileRef.current?.click()}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, case_.id)}
-              >
-                <input
-                  ref={case_.fileRef}
-                  type="file"
-                  accept=".csv"
-                  onChange={(e) => e.target.files && handleFileUpload(e.target.files[0], case_.id)}
-                  className="hidden"
-                />
-                <div className="text-gray-500">
-                  <svg className="mx-auto h-12 w-12 mb-4" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <p className="text-lg">Click to select or drag and drop your CSV file here</p>
-                </div>
-              </div>
-              
-              {case_.file && (
-                <div className="mt-4 text-green-600 text-sm">
-                  {case_.file.name} uploaded successfully.
-                </div>
-              )}
-              
-              {renderCsvPreview(case_.preview)}
-            </div>
-          ))}
-
-          {/* Add Additional Case Button */}
-          {selectedFormat === 'iesve' && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <button
-                type="button"
-                onClick={addAdditionalCase}
-                className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
-              >
-                <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                <span className="text-gray-700 font-medium">Add Additional Energy Data Case</span>
-              </button>
-              <p className="mt-2 text-sm text-gray-500 text-center">Add scenarios like energy efficient measures, retrofits, or other comparative cases</p>
             </div>
           )}
 
