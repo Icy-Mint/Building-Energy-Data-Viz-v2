@@ -38,4 +38,23 @@ body { @apply bg-gray-50 text-gray-900; }
   animation: gradientShift 10s ease infinite;
 }
 
+/* D3 Chart Styles */
+.axis path,
+.axis line {
+  stroke: #555;
+}
+
+.axis text {
+  fill: #555;
+}
+
+.bar,
+.pie-slice {
+  cursor: pointer;
+}
+
+svg {
+  overflow: visible;
+}
+
 
