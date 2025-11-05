@@ -1070,7 +1070,7 @@ export default function App() {
           <div className="mx-auto max-w-7xl px-4 relative z-10">
             <div className="text-center">
               <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-gray-900">Climate-first building energy insights</h2>
-              <p className="mt-3 text-gray-700 leading-relaxed max-w-3xl mx-auto">Import CSV outputs from energy simulations and explore interactive charts for time-series, end-use breakdowns, and scenario comparisons.</p>
+              <p className="mt-3 text-gray-700 leading-relaxed max-w-3xl mx-auto">Import CSV data and explore interactive charts to visualize trends, categories, and scenario comparisons.</p>
               <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                 <Link to="/upload" className="btn-brand">Import Data</Link>
                 <Link to="/dashboard" className="btn-ghost">Get a Demo</Link>
@@ -1119,19 +1119,19 @@ export default function App() {
             <div className="w-3/4 mx-auto">
               <div className="grid lg:grid-cols-2 gap-0">
             {/* Historic Data Analysis */}
-            <div className="bg-white border border-gray-200 shadow-sm p-8 h-96 flex flex-col justify-between">
+            <div className="bg-white border border-gray-200 shadow-sm p-8 h-[28rem] flex flex-col justify-between">
               <div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">Historic Data Analysis</h3>
-                <p className="text-gray-600 text-base leading-relaxed mb-6">Explore historical consumption trends, seasonal patterns, and end-use breakdowns from past simulations or metered datasets.</p>
+                <p className="text-gray-600 text-base leading-relaxed mb-6">Explore past data to identify trends, seasonal patterns, and key performance metrics.</p>
                 
                 <div className="mb-6">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-                    <span className="text-base text-gray-700">Monthly aggregations</span>
+                    <span className="text-base text-gray-700">Monthly summaries</span>
                   </div>
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                    <span className="text-base text-gray-700">End-use breakdowns</span>
+                    <span className="text-base text-gray-700">Category breakdowns</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
@@ -1152,19 +1152,23 @@ export default function App() {
             </div>
 
             {/* Future Energy Data Forecasting */}
-            <div className="bg-white border border-emerald-200 shadow-sm ring-1 ring-emerald-100 p-8 h-96 flex flex-col justify-between">
+            <div className="bg-white border border-emerald-200 shadow-sm ring-1 ring-emerald-100 p-8 h-[28rem] flex flex-col justify-between">
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Future Energy Data Forecasting</h3>
-                <p className="text-gray-600 text-base leading-relaxed mb-6">Upload scenario projections to visualize future energy use and compare with current baselines. Supports CSV inputs similar to the reference repo's future datasets.</p>
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">Scenario Exploration</h3>
+                <p className="text-gray-600 text-base leading-relaxed mb-6">Upload projection datasets to explore future trends and compare them with current data.</p>
                 
                 <div className="mb-6 p-4 bg-emerald-50 rounded-lg">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-                    <span className="text-base font-medium text-emerald-800">Expected columns: time, end_use, value, unit</span>
+                    <span className="text-base font-medium text-emerald-800">Supports CSV files similar to the provided examples.</span>
+                  </div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+                    <span className="text-base font-medium text-emerald-800">Expected columns: time, category, value, unit</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-                    <span className="text-base text-emerald-700">Compare scenarios by re-uploading different forecast files</span>
+                    <span className="text-base text-emerald-700">Upload different files to analyze alternative scenarios.</span>
                   </div>
                 </div>
               </div>
@@ -1191,34 +1195,34 @@ export default function App() {
           <div className="w-3/4 mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Powerful Energy Analytics</h2>
-              <p className="text-lg text-gray-600 max-w-3xl mx-auto">Transform your building energy data into actionable insights with our comprehensive suite of visualization and analysis tools.</p>
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto">Transform your data into actionable insights with a comprehensive set of visualization and analysis tools.</p>
             </div>
 
             {/* Feature Cards Grid */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
               <FeatureCard 
                 title="Interactive Dashboards" 
-                desc="Create dynamic, interactive dashboards that update in real-time as you explore your energy data. Drill down into specific time periods and end-uses with intuitive controls."
+                desc="Build dynamic dashboards that respond in real time as you explore your data. Drill down into specific time ranges or categories using intuitive controls."
               />
               <FeatureCard 
                 title="Advanced Analytics" 
-                desc="Leverage machine learning algorithms to identify patterns, anomalies, and optimization opportunities in your building energy consumption."
+                desc="Apply analytical methods to uncover patterns, detect anomalies, and highlight opportunities for improvement in your data."
               />
               <FeatureCard 
                 title="Scenario Comparison" 
-                desc="Compare multiple energy scenarios side-by-side to evaluate the impact of different strategies and make data-driven decisions."
+                desc="Compare multiple data scenarios side by side to evaluate different assumptions and outcomes."
               />
               <FeatureCard 
                 title="Automated Reporting" 
-                desc="Generate comprehensive reports automatically with customizable templates. Schedule automated delivery to stakeholders."
+                desc="Create summary reports automatically using customizable templates. Easily export or share results for review."
               />
               <FeatureCard 
                 title="Data Integration" 
-                desc="Seamlessly connect with popular energy modeling tools, building management systems, and IoT sensors for unified data management."
+                desc="Easily combine data from multiple sources to create a unified and consistent dataset for analysis."
               />
               <FeatureCard 
-                title="Carbon Tracking" 
-                desc="Monitor and visualize your building's carbon footprint with real-time emissions tracking and sustainability metrics."
+                title="Impact Tracking" 
+                desc="Monitor and visualize key performance indicators over time to evaluate progress toward sustainability goals."
               />
             </div>
 
@@ -1226,7 +1230,7 @@ export default function App() {
             <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl p-8 lg:p-12">
               <div className="grid lg:grid-cols-2 gap-12 items-center">
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-6">Built for Energy Professionals</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-6">Built for Data Exploration</h3>
                   <div className="space-y-4">
                     <div className="flex items-start gap-3">
                       <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -1234,7 +1238,7 @@ export default function App() {
                       </div>
                       <div>
                         <h4 className="font-semibold text-gray-900">Multi-format Support</h4>
-                        <p className="text-gray-600">Import data from EnergyPlus, OpenStudio, IESVE, and other major simulation engines</p>
+                        <p className="text-gray-600">Import datasets from multiple tools and formats for flexible analysis.</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
@@ -1243,7 +1247,7 @@ export default function App() {
                       </div>
                       <div>
                         <h4 className="font-semibold text-gray-900">Real-time Collaboration</h4>
-                        <p className="text-gray-600">Share insights with team members and stakeholders through secure, collaborative workspaces</p>
+                        <p className="text-gray-600">Share findings and visualizations securely with collaborators in shared workspaces.</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
@@ -1252,7 +1256,7 @@ export default function App() {
                       </div>
                       <div>
                         <h4 className="font-semibold text-gray-900">Custom Visualizations</h4>
-                        <p className="text-gray-600">Create tailored charts and graphs that match your organization's reporting standards</p>
+                        <p className="text-gray-600">Design tailored charts and dashboards to fit specific project or presentation needs.</p>
                       </div>
                     </div>
                   </div>

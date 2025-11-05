@@ -141,38 +141,53 @@ export default function Upload() {
       }
     });
 
-    // Process current file
-    Papa.parse(currentFile, {
-      header: true,
-      dynamicTyping: true,
-      skipEmptyLines: true,
-      complete: (results: any) => {
-        const data = results.data as Record<string, string | number>[];
-        const columns = results.meta.fields ?? Object.keys(data[0] ?? {});
-        const dataset: ParsedDataset = { columns, rows: data };
-        sessionStorage.setItem('dataset', JSON.stringify(dataset));
-        
-        // Process future file if available
-        if (futureFile) {
-          Papa.parse(futureFile, {
-            header: true,
-            dynamicTyping: true,
-            skipEmptyLines: true,
-            complete: (futureResults: any) => {
-              const futureData = futureResults.data as Record<string, string | number>[];
-              const futureColumns = futureResults.meta.fields ?? Object.keys(futureData[0] ?? {});
-              const futureDataset: ParsedDataset = { columns: futureColumns, rows: futureData };
-              sessionStorage.setItem('futureDataset', JSON.stringify(futureDataset));
-              navigate('/dashboard');
-            },
-            error: (err: any) => setErrorMessage(err.message),
-          });
-        } else {
-        navigate('/dashboard');
-        }
-      },
-      error: (err: any) => setErrorMessage(err.message),
-    });
+    // Read and store raw CSV text for dashboard visualization
+    const readCurrentFile = async () => {
+      const text = await currentFile.text();
+      sessionStorage.setItem('iesveCsvData', text);
+      
+      // Also parse and store as JSON for compatibility
+      Papa.parse(text, {
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true,
+        complete: (results: any) => {
+          const data = results.data as Record<string, string | number>[];
+          const columns = results.meta.fields ?? Object.keys(data[0] ?? {});
+          const dataset: ParsedDataset = { columns, rows: data };
+          sessionStorage.setItem('dataset', JSON.stringify(dataset));
+          
+          // Process future file if available
+          if (futureFile) {
+            readFutureFile();
+          } else {
+            navigate('/dashboard');
+          }
+        },
+        error: (err: any) => setErrorMessage(err.message),
+      });
+    };
+
+    const readFutureFile = async () => {
+      const text = await futureFile!.text();
+      sessionStorage.setItem('iesveFutureCsvData', text);
+      
+      Papa.parse(text, {
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true,
+        complete: (futureResults: any) => {
+          const futureData = futureResults.data as Record<string, string | number>[];
+          const futureColumns = futureResults.meta.fields ?? Object.keys(futureData[0] ?? {});
+          const futureDataset: ParsedDataset = { columns: futureColumns, rows: futureData };
+          sessionStorage.setItem('futureDataset', JSON.stringify(futureDataset));
+          navigate('/dashboard');
+        },
+        error: (err: any) => setErrorMessage(err.message),
+      });
+    };
+
+    readCurrentFile();
   };
 
   const renderCsvPreview = (data: string[][]) => {
@@ -221,41 +236,6 @@ export default function Upload() {
         </div>
         
         <h1 className="text-2xl font-semibold mb-6">Import Raw Data Files</h1>
-        <p className="mb-6 text-gray-600">Select your building simulation result format:</p>
-
-        {/* Format Selection Buttons */}
-        <div className="flex justify-center gap-4 mb-8">
-          <button
-            onClick={() => handleFormatChange('iesve')}
-            className={`px-6 py-2 border rounded transition-colors ${
-              selectedFormat === 'iesve'
-                ? 'bg-gray-800 text-white border-gray-800'
-                : 'bg-white text-gray-800 border-gray-800 hover:bg-gray-50'
-            }`}
-          >
-            IESVE
-          </button>
-          <button
-            onClick={() => handleFormatChange('openstudio')}
-            className={`px-6 py-2 border rounded transition-colors ${
-              selectedFormat === 'openstudio'
-                ? 'bg-gray-800 text-white border-gray-800'
-                : 'bg-white text-gray-800 border-gray-800 hover:bg-gray-50'
-            }`}
-          >
-            OpenStudio
-          </button>
-          <button
-            onClick={() => handleFormatChange('equest')}
-            className={`px-6 py-2 border rounded transition-colors ${
-              selectedFormat === 'equest'
-                ? 'bg-gray-800 text-white border-gray-800'
-                : 'bg-white text-gray-800 border-gray-800 hover:bg-gray-50'
-            }`}
-          >
-            eQuest
-          </button>
-        </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Project Information Form */}
