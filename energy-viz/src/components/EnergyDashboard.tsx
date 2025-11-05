@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const keys = [
   "Interior Lighting (MBtu)",
@@ -62,6 +64,160 @@ function parseCsvMonthly(csvText: string) {
   return monthlyData;
 }
 
+// Insight generation functions
+function generateAnnualInsights(
+  currentTotals: Record<string, number>,
+  futureTotals: Record<string, number>
+): string {
+  if (Object.keys(currentTotals).length === 0) {
+    return "No data available to summarize.";
+  }
+
+  const currentTotal = Object.values(currentTotals).reduce((sum, val) => sum + val, 0);
+  const futureTotal = Object.values(futureTotals).reduce((sum, val) => sum + val, 0);
+  const reduction = currentTotal > 0 ? ((currentTotal - futureTotal) / currentTotal * 100).toFixed(1) : 0;
+
+  // Find top categories
+  const sortedCategories = Object.entries(currentTotals)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3);
+
+  const topCategories = sortedCategories.map(([cat]) => {
+    const name = cat.replace(' (MBtu)', '');
+    return name.replace(/([a-z])([A-Z])/g, '$1 $2');
+  }).join(', ');
+
+  return `Annual energy comparison shows current consumption at ${currentTotal.toFixed(1)} MBtu versus projected future consumption of ${futureTotal.toFixed(1)} MBtu, representing a ${reduction}% reduction. Top contributing categories: ${topCategories}.`;
+}
+
+function generatePieInsights(
+  totals: Record<string, number>,
+  dataType: string
+): string {
+  if (Object.keys(totals).length === 0) {
+    return "No data available to summarize.";
+  }
+
+  const total = Object.values(totals).reduce((sum, val) => sum + val, 0);
+  const entries = Object.entries(totals);
+  const maxEntry = entries.reduce((max, [key, val]) => val > max[1] ? [key, val] : max, entries[0]);
+  const maxCategory = maxEntry[0].replace(' (MBtu)', '').replace(/([a-z])([A-Z])/g, '$1 $2');
+  const maxPercent = ((maxEntry[1] / total) * 100).toFixed(1);
+
+  return `${dataType} scenario shows total consumption of ${total.toFixed(1)} MBtu. The highest category is ${maxCategory} at ${maxPercent}% (${maxEntry[1].toFixed(1)} MBtu).`;
+}
+
+function generateLineInsights(
+  category: string,
+  monthlyData: Array<Record<string, string | number>>,
+  dataType: string
+): string {
+  if (!category || category === "Select a category" || monthlyData.length === 0) {
+    return "Select a category to view monthly trend insights.";
+  }
+
+  const values = monthlyData.map(d => (d[category] as number) || 0);
+  const avgValue = values.reduce((sum, val) => sum + val, 0) / values.length;
+  const maxValue = Math.max(...values);
+  const minValue = Math.min(...values);
+  
+  const maxIndex = values.indexOf(maxValue);
+  const minIndex = values.indexOf(minValue);
+  const maxMonth = monthlyData[maxIndex]?.month || 'Unknown';
+  const minMonth = monthlyData[minIndex]?.month || 'Unknown';
+
+  const categoryName = category.replace(' (MBtu)', '').replace(/([a-z])([A-Z])/g, '$1 $2');
+
+  return `${dataType} ${categoryName} consumption averages ${avgValue.toFixed(1)} MBtu per month. Peak consumption occurred in ${maxMonth} at ${maxValue.toFixed(1)} MBtu, while the lowest was in ${minMonth} at ${minValue.toFixed(1)} MBtu.`;
+}
+
+function generateOverallInsights(
+  currentTotals: Record<string, number>,
+  futureTotals: Record<string, number>,
+  currentMonthly: Array<Record<string, string | number>>,
+  selectedCategory: string
+): string {
+  if (Object.keys(currentTotals).length === 0) {
+    return "No data available to summarize.";
+  }
+
+  const currentTotal = Object.values(currentTotals).reduce((sum, val) => sum + val, 0);
+  const futureTotal = Object.values(futureTotals).reduce((sum, val) => sum + val, 0);
+  const reduction = currentTotal > 0 ? ((currentTotal - futureTotal) / currentTotal * 100).toFixed(1) : 0;
+
+  // Find dominant category
+  const dominantCategory = Object.entries(currentTotals)
+    .sort(([, a], [, b]) => b - a)[0];
+  const dominantName = dominantCategory[0].replace(' (MBtu)', '').replace(/([a-z])([A-Z])/g, '$1 $2');
+  const dominantPercent = ((dominantCategory[1] / currentTotal) * 100).toFixed(1);
+
+  // Analyze seasonal patterns if monthly data available
+  let seasonalPattern = "";
+  if (currentMonthly.length > 0 && selectedCategory !== "Select a category") {
+    const categoryValues = currentMonthly.map(d => (d[selectedCategory] as number) || 0);
+    const summerAvg = categoryValues.slice(5, 8).reduce((a, b) => a + b, 0) / 3; // Jun, Jul, Aug
+    const winterAvg = (categoryValues.slice(0, 3).reduce((a, b) => a + b, 0) + 
+                       categoryValues.slice(9, 12).reduce((a, b) => a + b, 0)) / 5; // Dec, Jan, Feb, Oct, Nov
+    if (summerAvg > winterAvg * 1.2) {
+      seasonalPattern = " Energy use shows a gradual upward trend during summer months, mainly driven by cooling loads.";
+    } else if (winterAvg > summerAvg * 1.2) {
+      seasonalPattern = " Energy use shows higher consumption during winter months, primarily driven by heating loads.";
+    } else {
+      seasonalPattern = " Consumption remains relatively stable across seasons.";
+    }
+  }
+
+  return `Energy use shows a ${reduction}% projected reduction from current to future scenarios. The dominant category is ${dominantName}, representing ${dominantPercent}% of total consumption.${seasonalPattern} The projected reduction suggests potential for energy efficiency improvements across multiple categories.`;
+}
+
+function generateRecommendations(
+  currentTotals: Record<string, number>,
+  futureTotals: Record<string, number>,
+  currentMonthly: Array<Record<string, string | number>>
+): string {
+  if (Object.keys(currentTotals).length === 0) {
+    return "No recommendations available without data.";
+  }
+
+  const currentTotal = Object.values(currentTotals).reduce((sum, val) => sum + val, 0);
+  const futureTotal = Object.values(futureTotals).reduce((sum, val) => sum + val, 0);
+  const reduction = currentTotal > 0 ? ((currentTotal - futureTotal) / currentTotal * 100) : 0;
+
+  // Find categories with highest values
+  const topCategories = Object.entries(currentTotals)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 2)
+    .map(([cat]) => cat.replace(' (MBtu)', '').replace(/([a-z])([A-Z])/g, '$1 $2'));
+
+  const recommendations: string[] = [];
+
+  if (reduction > 0) {
+    recommendations.push(`Focus on maintaining the projected ${reduction.toFixed(1)}% reduction through the identified efficiency measures.`);
+  }
+
+  if (topCategories.length > 0) {
+    recommendations.push(`Consider optimizing ${topCategories.join(' and ')}, where values are consistently highest.`);
+  }
+
+  if (currentMonthly.length > 0) {
+    // Check for peak months
+    const allMonthlyTotals = currentMonthly.map(month => 
+      Object.entries(month)
+        .filter(([key]) => keys.includes(key))
+        .reduce((sum, [, val]) => sum + ((val as number) || 0), 0)
+    );
+    const maxMonthIndex = allMonthlyTotals.indexOf(Math.max(...allMonthlyTotals));
+    const maxMonth = currentMonthly[maxMonthIndex]?.month || 'Unknown';
+    recommendations.push(`Investigate factors contributing to peak consumption in ${maxMonth} to identify optimization opportunities.`);
+  }
+
+  if (recommendations.length === 0) {
+    return "Continue monitoring energy consumption patterns and explore opportunities for efficiency improvements across all categories.";
+  }
+
+  return recommendations.join(' ');
+}
+
 export default function EnergyDashboard() {
   const annualChartRef = useRef<HTMLDivElement>(null);
   const pieChartRef = useRef<HTMLDivElement>(null);
@@ -75,6 +231,10 @@ export default function EnergyDashboard() {
   const [currentMonthly, setCurrentMonthly] = useState<Array<Record<string, string | number>>>([]);
   const [futureMonthly, setFutureMonthly] = useState<Array<Record<string, string | number>> | null>(null);
   const [projectInfo, setProjectInfo] = useState<Record<string, string>>({});
+  const [annualInsight, setAnnualInsight] = useState<string>("");
+  const [pieInsight, setPieInsight] = useState<string>("");
+  const [lineInsight, setLineInsight] = useState<string>("");
+  const [overallInsight, setOverallInsight] = useState<string>("");
 
   useEffect(() => {
     const rawCsvCurrent = sessionStorage.getItem("iesveCsvData");
@@ -143,10 +303,32 @@ export default function EnergyDashboard() {
       { label: "Future", ...futureTotals }
     ];
 
+    // Generate insights
+    setAnnualInsight(generateAnnualInsights(currentTotals, futureTotals));
+    setPieInsight(generatePieInsights(
+      pieDataType === "Current" ? currentTotals : futureTotals,
+      pieDataType
+    ));
+    
+    if (selectedCategory !== "Select a category") {
+      const monthlyData = pieDataType === "Current" ? currentMonthly : (futureMonthly || []);
+      setLineInsight(generateLineInsights(selectedCategory, monthlyData, pieDataType));
+    } else {
+      setLineInsight("Select a category to view monthly trend insights.");
+    }
+
+    // Generate overall insights
+    setOverallInsight(generateOverallInsights(
+      currentTotals,
+      futureTotals,
+      currentMonthly,
+      selectedCategory
+    ));
+
     drawAnnualChart(annualChartData);
     drawPieChart(pieDataType, pieDataType === "Current" ? currentTotals : futureTotals);
     setupLineChart();
-  }, [currentTotals, futureTotals, pieDataType]);
+  }, [currentTotals, futureTotals, pieDataType, selectedCategory, currentMonthly, futureMonthly]);
 
   const drawAnnualChart = (data: Array<Record<string, string | number>>) => {
     if (!annualChartRef.current) return;
@@ -160,6 +342,8 @@ export default function EnergyDashboard() {
       .append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
+      .attr("overflow", "visible")
+      .style("overflow", "visible")
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
@@ -312,6 +496,8 @@ export default function EnergyDashboard() {
       .append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
+      .attr("overflow", "visible")
+      .style("overflow", "visible")
       .append("g")
       .attr("transform", `translate(${width / 2 + margin.left}, ${height / 2 + margin.top})`);
 
@@ -432,17 +618,28 @@ export default function EnergyDashboard() {
   const showMonthlyTrend = (category: string) => {
     setSelectedCategory(category);
     
+    // Update line chart insight
+    const monthlyData = pieDataType === "Current" ? currentMonthly : (futureMonthly || []);
+    setLineInsight(generateLineInsights(category, monthlyData, pieDataType));
+    
     if (!lineChartRef.current) return;
     lineChartRef.current.innerHTML = '';
 
-    const margin = { top: 20, right: 60, bottom: 60, left: 60 };
+    // Increased margins to accommodate all text labels (especially Y-axis label)
+    const margin = { top: 40, right: 80, bottom: 80, left: 90 };
     const width = 800 - margin.left - margin.right;
     const height = 300 - margin.top - margin.bottom;
 
+    // Increase SVG dimensions to accommodate rotated Y-axis label and all text
+    const svgWidth = width + margin.left + margin.right + 50; // Extra space for Y-axis label
+    const svgHeight = height + margin.top + margin.bottom + 50; // Extra space for labels
+    
     const svg = d3.select(lineChartRef.current)
       .append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
+      .attr("width", svgWidth)
+      .attr("height", svgHeight)
+      .attr("overflow", "visible")
+      .style("overflow", "visible")
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
@@ -646,13 +843,15 @@ export default function EnergyDashboard() {
     svg.append("text")
       .attr("transform", "rotate(-90)")
       .attr("x", -height / 2)
-      .attr("y", -60)
+      .attr("y", -75)
       .attr("text-anchor", "middle")
       .style("font-size", "14px")
+      .style("font-weight", "500")
       .text("Energy Consumption (MBtu)");
 
+    // Position legend further left to ensure it fits within SVG bounds
     const legend = svg.append("g")
-      .attr("transform", `translate(${width + 20}, 0)`);
+      .attr("transform", `translate(${width - 10}, 0)`);
 
     const sw = 15, gap = 8;
     legend.append("rect")
@@ -687,6 +886,25 @@ export default function EnergyDashboard() {
     if (dataType === "Current" || dataType === "Future") {
       setPieDataType(dataType);
       drawPieChart(dataType, dataType === "Current" ? currentTotals : futureTotals);
+      
+      // Update insights
+      setPieInsight(generatePieInsights(
+        dataType === "Current" ? currentTotals : futureTotals,
+        dataType
+      ));
+      
+      if (selectedCategory !== "Select a category") {
+        const monthlyData = dataType === "Current" ? currentMonthly : (futureMonthly || []);
+        setLineInsight(generateLineInsights(selectedCategory, monthlyData, dataType));
+      }
+      
+      // Update overall insights
+      setOverallInsight(generateOverallInsights(
+        currentTotals,
+        futureTotals,
+        currentMonthly,
+        selectedCategory
+      ));
     }
   };
 
@@ -709,6 +927,288 @@ export default function EnergyDashboard() {
     'meteredData': 'Metered Energy Use Data',
     'energyModelingTool': 'Energy Modeling Tool',
     'targetEUI': 'Target EUI'
+  };
+
+  const generateFullReport = async () => {
+    try {
+      const pdf = new jsPDF('portrait', 'mm', 'a4');
+      const pageWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
+      const margin = 20;
+      const contentWidth = pageWidth - (margin * 2);
+      let yPosition = margin;
+
+      // Title
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Energy Analysis Dashboard Report', margin, yPosition);
+      yPosition += 10;
+
+      // Timestamp
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      const timestamp = new Date().toLocaleString();
+      pdf.text(`Generated: ${timestamp}`, margin, yPosition);
+      yPosition += 15;
+
+      // Capture and add Annual Chart
+      if (annualChartRef.current) {
+        yPosition += 10;
+        
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Annual Energy Comparison', margin, yPosition);
+        yPosition += 15;
+
+        const annualCanvas = await html2canvas(annualChartRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 3,
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          windowWidth: annualChartRef.current.scrollWidth,
+          windowHeight: annualChartRef.current.scrollHeight,
+          x: 0,
+          y: 0,
+          width: annualChartRef.current.scrollWidth,
+          height: annualChartRef.current.scrollHeight
+        });
+        const annualImgData = annualCanvas.toDataURL('image/png');
+        
+        const chartWidthPercent = 0.75;
+        const annualImgWidth = (pageWidth - (margin * 2)) * chartWidthPercent;
+        const annualImgHeight = (annualCanvas.height * annualImgWidth) / annualCanvas.width;
+        
+        const annualXPosition = (pageWidth - annualImgWidth) / 2;
+        
+        if (yPosition + annualImgHeight + 20 > pageHeight - 20) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+        
+        pdf.addImage(annualImgData, 'PNG', annualXPosition, yPosition, annualImgWidth, annualImgHeight);
+        yPosition += annualImgHeight + 15;
+
+        // Annual insight
+        if (annualInsight) {
+          pdf.setFontSize(10);
+          pdf.setFont('helvetica', 'normal');
+          const splitInsight = pdf.splitTextToSize(annualInsight, contentWidth);
+          if (yPosition + splitInsight.length * 5 > pageHeight - 20) {
+            pdf.addPage();
+            yPosition = margin;
+          }
+          pdf.text(splitInsight, margin, yPosition);
+          yPosition += splitInsight.length * 5 + 10;
+        }
+      }
+
+      // Capture and add Pie Chart
+      if (pieChartRef.current) {
+        const textColumnWidth = contentWidth * 0.35;
+        const chartColumnWidth = contentWidth * 0.65;
+        const columnGap = 10;
+
+        const pieCanvas = await html2canvas(pieChartRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 3,
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          windowWidth: pieChartRef.current.scrollWidth,
+          windowHeight: pieChartRef.current.scrollHeight,
+          x: 0,
+          y: 0,
+          width: pieChartRef.current.scrollWidth,
+          height: pieChartRef.current.scrollHeight
+        });
+        const pieImgData = pieCanvas.toDataURL('image/png');
+        
+        const desiredPieWidth = chartColumnWidth;
+        const pieImgHeight = (pieCanvas.height * desiredPieWidth) / pieCanvas.width;
+
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        const pieInsightSplitText = pieInsight ? pdf.splitTextToSize(pieInsight, textColumnWidth) : [];
+        const pieInsightTextHeight = pieInsightSplitText.length * 5;
+
+        const sectionTitleHeight = 10;
+        const estimatedContentHeight = Math.max(pieInsightTextHeight, pieImgHeight);
+        const estimatedSectionHeight = sectionTitleHeight + estimatedContentHeight + 20;
+
+        if (yPosition + estimatedSectionHeight > pageHeight - 20) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`Energy Use by Category (${pieDataType})`, margin, yPosition);
+        let currentContentY = yPosition + sectionTitleHeight;
+
+        if (pieInsight) {
+          pdf.setFontSize(10);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text(pieInsightSplitText, margin, currentContentY);
+        }
+
+        const pieChartX = margin + textColumnWidth + columnGap;
+        pdf.addImage(pieImgData, 'PNG', pieChartX, currentContentY, desiredPieWidth, pieImgHeight);
+        
+        yPosition = Math.max(currentContentY + pieInsightTextHeight, currentContentY + pieImgHeight) + 10;
+      }
+
+      // Capture and add Line Chart
+      if (lineChartRef.current && selectedCategory !== "Select a category") {
+        yPosition += 10;
+        
+        if (yPosition + 100 > pageHeight - 20) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`Monthly Trend: ${selectedCategory}`, margin, yPosition);
+        yPosition += 15;
+
+        // Capture chart with better settings to avoid text cutoff
+        // Wait for animations to complete and ensure all elements are rendered
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Get the actual bounding box of the SVG content to ensure full capture
+        const svgElement = lineChartRef.current.querySelector('svg') as SVGSVGElement | null;
+        let captureWidth = lineChartRef.current.scrollWidth || lineChartRef.current.offsetWidth;
+        let captureHeight = lineChartRef.current.scrollHeight || lineChartRef.current.offsetHeight;
+        
+        if (svgElement) {
+          try {
+            const bbox = svgElement.getBBox();
+            // Add extra padding (150px) to ensure all text labels are captured
+            captureWidth = Math.max(captureWidth, bbox.width + bbox.x + 150);
+            captureHeight = Math.max(captureHeight, bbox.height + bbox.y + 150);
+          } catch (e) {
+            // If getBBox fails, use current dimensions with extra padding
+            captureWidth = captureWidth + 150;
+            captureHeight = captureHeight + 150;
+          }
+        } else {
+          // Add padding if SVG not found
+          captureWidth = captureWidth + 150;
+          captureHeight = captureHeight + 150;
+        }
+        
+        // Ensure container has proper overflow settings before capture
+        if (lineChartRef.current) {
+          lineChartRef.current.style.overflow = 'visible';
+          lineChartRef.current.style.overflowX = 'visible';
+          lineChartRef.current.style.overflowY = 'visible';
+        }
+        
+        const lineCanvas = await html2canvas(lineChartRef.current!, {
+          backgroundColor: '#ffffff',
+          scale: 3,
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          removeContainer: false,
+          width: captureWidth,
+          height: captureHeight,
+          x: 0,
+          y: 0,
+          scrollX: 0,
+          scrollY: 0,
+          onclone: (clonedDoc) => {
+            // Ensure container doesn't clip
+            const container = clonedDoc.querySelector('[ref="lineChartRef"]') || 
+              clonedDoc.body.querySelector('[data-chart="line"]') ||
+              lineChartRef.current;
+            if (container) {
+              (container as HTMLElement).style.overflow = 'visible';
+              (container as HTMLElement).style.overflowX = 'visible';
+              (container as HTMLElement).style.overflowY = 'visible';
+            }
+            
+            // Ensure all SVG elements are visible and properly sized
+            const svgs = clonedDoc.querySelectorAll('svg');
+            svgs.forEach((svg: SVGElement) => {
+              svg.style.overflow = 'visible';
+              svg.setAttribute('overflow', 'visible');
+              // Ensure parent container doesn't clip
+              const parent = svg.parentElement;
+              if (parent) {
+                parent.style.overflow = 'visible';
+                parent.style.overflowX = 'visible';
+                parent.style.overflowY = 'visible';
+              }
+            });
+            // Ensure all text elements are visible
+            const textElements = clonedDoc.querySelectorAll('text');
+            textElements.forEach((text: SVGTextElement) => {
+              text.style.visibility = 'visible';
+              text.style.display = 'block';
+            });
+          }
+        });
+        const lineImgData = lineCanvas.toDataURL('image/png');
+        
+        // Make line chart as large as possible - use 95% of available width
+        const chartWidthPercent = 0.95;
+        const lineImgWidth = (pageWidth - (margin * 2)) * chartWidthPercent;
+        const lineImgHeight = (lineCanvas.height * lineImgWidth) / lineCanvas.width;
+        
+        const lineXPosition = (pageWidth - lineImgWidth) / 2;
+        
+        if (yPosition + lineImgHeight + 20 > pageHeight - 20) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+        
+        pdf.addImage(lineImgData, 'PNG', lineXPosition, yPosition, lineImgWidth, lineImgHeight);
+        yPosition += lineImgHeight + 15;
+
+        if (lineInsight && lineInsight !== "Select a category to view monthly trend insights.") {
+          pdf.setFontSize(10);
+          pdf.setFont('helvetica', 'normal');
+          const splitInsight = pdf.splitTextToSize(lineInsight, contentWidth);
+          if (yPosition + splitInsight.length * 5 > pageHeight - 20) {
+            pdf.addPage();
+            yPosition = margin;
+          }
+          pdf.text(splitInsight, margin, yPosition);
+          yPosition += splitInsight.length * 5 + 10;
+        }
+      }
+
+      // Smart Insights Section
+      if (yPosition + 30 > pageHeight - 20) {
+        pdf.addPage();
+        yPosition = margin;
+      }
+
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Smart Insights', margin, yPosition);
+      yPosition += 10;
+
+      if (overallInsight) {
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'normal');
+        const splitOverall = pdf.splitTextToSize(overallInsight, contentWidth);
+        if (yPosition + splitOverall.length * 5 > pageHeight - 20) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+        pdf.text(splitOverall, margin, yPosition);
+        yPosition += splitOverall.length * 5 + 10;
+      }
+
+      // Save PDF
+      pdf.save(`Energy_Analysis_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error('Error generating report:', error);
+      alert('Failed to generate report. Please try again.');
+    }
   };
 
   return (
@@ -736,11 +1236,65 @@ export default function EnergyDashboard() {
           </div>
         </div>
 
-        <div ref={lineChartRef} className="w-full mt-8 min-h-[300px]">
+        <div ref={lineChartRef} className="w-full mt-8 min-h-[400px]" style={{ overflow: 'visible', overflowX: 'visible', overflowY: 'visible' }}>
           <div className="text-center font-semibold text-xl mb-6 text-gray-800" style={{ fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
             Monthly Trend: <span>{selectedCategory}</span>
           </div>
         </div>
+
+        {/* Smart Insights Section */}
+        {(annualInsight || pieInsight || lineInsight || overallInsight) && (
+          <div className="mt-12 bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <h3 className="text-xl font-bold text-gray-900 mb-6" style={{ fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
+              Smart Insights
+            </h3>
+
+            <div className="space-y-6">
+              {/* Chart Summaries */}
+              <div className="space-y-4">
+                {annualInsight && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-800 mb-2">Annual Energy Comparison</h4>
+                    <p className="text-sm text-gray-700 leading-relaxed">{annualInsight}</p>
+                  </div>
+                )}
+
+                {pieInsight && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-800 mb-2">Energy Use by Category</h4>
+                    <p className="text-sm text-gray-700 leading-relaxed">{pieInsight}</p>
+                  </div>
+                )}
+
+                {lineInsight && lineInsight !== "Select a category to view monthly trend insights." && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-800 mb-2">Monthly Trend Analysis</h4>
+                    <p className="text-sm text-gray-700 leading-relaxed">{lineInsight}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Overall Insights */}
+              {overallInsight && (
+                <div className="pt-4 border-t border-gray-200">
+                  <h4 className="text-base font-semibold text-gray-900 mb-3">Overall Summary</h4>
+                  <p className="text-sm text-gray-700 leading-relaxed">{overallInsight}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Generate Report Button */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <button
+                onClick={generateFullReport}
+                className="px-6 py-3 bg-gray-800 text-white rounded-md hover:bg-gray-900 transition-colors font-medium text-sm"
+                style={{ fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}
+              >
+                Generate Report (PDF)
+              </button>
+            </div>
+          </div>
+        )}
 
         {Object.keys(projectInfo).length > 0 && (
           <div className="bg-gray-50 p-6 rounded-lg mt-8 shadow-sm" style={{ fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
