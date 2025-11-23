@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import EnergyDashboard from '../components/EnergyDashboard';
+import Chatbot from '../components/Chatbot';
 
 export default function Dashboard() {
   const hasData = sessionStorage.getItem('iesveCsvData');
@@ -18,6 +19,7 @@ export default function Dashboard() {
         
         {hasData && <EnergyDashboard />}
       </div>
+      {hasData && <Chatbot />}
     </div>
   );
 }

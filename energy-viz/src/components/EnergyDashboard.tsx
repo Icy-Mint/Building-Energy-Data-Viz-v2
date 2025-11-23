@@ -327,7 +327,13 @@ export default function EnergyDashboard() {
 
     drawAnnualChart(annualChartData);
     drawPieChart(pieDataType, pieDataType === "Current" ? currentTotals : futureTotals);
-    setupLineChart();
+    
+    // Only show placeholder if no category is selected, otherwise draw the line chart
+    if (selectedCategory === "Select a category") {
+      setupLineChart();
+    } else {
+      showMonthlyTrend(selectedCategory);
+    }
   }, [currentTotals, futureTotals, pieDataType, selectedCategory, currentMonthly, futureMonthly]);
 
   const drawAnnualChart = (data: Array<Record<string, string | number>>) => {
