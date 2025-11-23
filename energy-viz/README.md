@@ -25,21 +25,18 @@
 - [Project Structure](#-project-structure)
 - [Configuration](#-configuration)
 - [Scripts / Commands](#-scripts--commands)
-- [Screenshots](#-screenshots)
 - [API Endpoints](#-api-endpoints)
 - [Deployment](#-deployment-instructions)
 - [Troubleshooting](#-troubleshooting)
-- [Contributing](#-contributing)
 - [License](#-license)
-- [Contact](#-contact--author-info)
 
 ---
 
 ## Description / Overview
 
-**Energy Analysis Viz** is a modern web application designed to transform CSV energy simulation data into interactive, visually compelling dashboards. Built with React and TypeScript, it provides a seamless workflow for uploading, parsing, and visualizing energy consumption data with an integrated AI chatbot assistant for intelligent data interpretation.
+**Energy Analysis Viz** is a modern web application designed to transform CSV energy data into interactive, visually compelling dashboards. Built with React and TypeScript, it provides a seamless workflow for uploading, parsing, and visualizing energy consumption data with an integrated AI chatbot assistant for intelligent data interpretation.
 
-The application supports multiple energy modeling formats (IESVE, OpenStudio, eQUEST) and generates comprehensive visualizations including annual comparisons, category breakdowns, and monthly trend analysis. The AI-powered chatbot helps users understand their data, interpret charts, and discover insights.
+The application generates comprehensive visualizations including annual comparisons, category breakdowns, and monthly trend analysis. The AI-powered chatbot helps users understand their data, interpret charts, and discover insights.
 
 ### Key Highlights
 
@@ -58,7 +55,6 @@ The application supports multiple energy modeling formats (IESVE, OpenStudio, eQ
 
 - **CSV Upload & Parsing**
   - Drag-and-drop file upload interface
-  - Support for multiple energy modeling formats (IESVE, OpenStudio, eQUEST)
   - Automatic header detection and data normalization
   - Real-time data preview before processing
 
@@ -236,7 +232,6 @@ npm run dev:server
 
 #### 2. **Upload CSV Data**
    - Go to the Upload page (`/upload`)
-   - Select your energy modeling format (IESVE, OpenStudio, or eQUEST)
    - Upload your CSV file(s):
      - **Current Scenario**: Required
      - **Future Scenario**: Optional (for comparison)
@@ -399,27 +394,6 @@ npm run preview
 cd server
 npm run dev
 ```
-
----
-
-## Screenshots
-
-> **Note**: Add screenshots or GIFs of your application here. Consider including:
-> - Welcome/Home page
-> - Upload interface
-> - Dashboard with charts
-> - Chatbot interaction
-> - Mobile responsive views
-
-### Dashboard View
-![Dashboard](public/images/preview.svg)
-*Main dashboard showing energy consumption visualizations*
-
-### Chatbot Interface
-*Floating chatbot providing AI-powered assistance*
-
-### Upload Page
-*CSV upload interface with format selection*
 
 ---
 
@@ -646,49 +620,6 @@ If you encounter issues not covered here:
 
 ---
 
-## Contributing
-
-We welcome contributions! Please follow these guidelines:
-
-### How to Contribute
-
-1. **Fork the repository**
-2. **Create a feature branch:**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. **Make your changes:**
-   - Follow the existing code style
-   - Add TypeScript types where needed
-   - Write clear commit messages
-4. **Test your changes:**
-   - Test locally with `npm run dev:all`
-   - Verify no TypeScript errors
-   - Test the chatbot functionality
-5. **Submit a pull request:**
-   - Provide a clear description of changes
-   - Reference any related issues
-
-### Code Style Guidelines
-
-- Use TypeScript for all new code
-- Follow React best practices (hooks, functional components)
-- Use Tailwind CSS for styling (avoid custom CSS when possible)
-- Maintain consistent naming conventions
-- Add comments for complex logic
-
-### Reporting Bugs
-
-When reporting bugs, please include:
-
-- Steps to reproduce
-- Expected behavior
-- Actual behavior
-- Browser and OS information
-- Error messages (if any)
-
----
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -716,35 +647,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
-
----
-
-## Contact / Author Info
-
-### Project Maintainer
-
-**Your Name**  
-*Your Title/Role*
-
-- Email: [your.email@example.com](mailto:your.email@example.com)
-- LinkedIn: [Your LinkedIn Profile](https://linkedin.com/in/yourprofile)
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Website: [yourwebsite.com](https://yourwebsite.com)
-
-### Acknowledgments
-
-- Built with [React](https://react.dev/)
-- Powered by [OpenAI](https://openai.com/) for AI capabilities
-- Visualizations with [D3.js](https://d3js.org/) and [Recharts](https://recharts.org/)
-- Styled with [Tailwind CSS](https://tailwindcss.com/)
-
-### Support
-
-For questions, issues, or feature requests:
-
-- [Open an Issue](https://github.com/yourusername/energy-viz/issues)
-- [Start a Discussion](https://github.com/yourusername/energy-viz/discussions)
-- Email: [your.email@example.com](mailto:your.email@example.com)
 
 ---
 

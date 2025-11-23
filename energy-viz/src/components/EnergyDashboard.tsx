@@ -278,7 +278,7 @@ export default function EnergyDashboard() {
       'projectName', 'projectSqft', 'projectId', 'climateZone', 'projectCategory',
       'constructionType', 'projectPhase', 'yearOccupancy', 'leedVersion',
       'targetCertification', 'country', 'stateProvince', 'zipCode', 'city',
-      'designEnergyCode', 'meteredData', 'energyModelingTool', 'targetEUI'
+      'designEnergyCode', 'targetEUI'
     ];
     
     projectKeys.forEach(key => {
@@ -930,8 +930,6 @@ export default function EnergyDashboard() {
     'zipCode': 'Zip Code',
     'city': 'City',
     'designEnergyCode': 'Design Energy Code',
-    'meteredData': 'Metered Energy Use Data',
-    'energyModelingTool': 'Energy Modeling Tool',
     'targetEUI': 'Target EUI'
   };
 

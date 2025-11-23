@@ -24,8 +24,6 @@ export type ProjectData = {
   zipCode: string;
   city: string;
   designEnergyCode: string;
-  meteredData: string;
-  energyModelingTool: string;
   targetEUI: string;
 };
 
@@ -54,8 +52,6 @@ export default function Upload() {
     zipCode: '',
     city: '',
     designEnergyCode: '',
-    meteredData: '',
-    energyModelingTool: '',
     targetEUI: ''
   });
 
@@ -466,37 +462,6 @@ export default function Upload() {
                     <option value="iecc-2021">IECC 2021</option>
                     <option value="iecc-2018">IECC 2018</option>
                     <option value="iecc-2015">IECC 2015</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Metered Energy Use Data
-                  </label>
-                  <select
-                    value={projectData.meteredData}
-                    onChange={(e) => setProjectData({...projectData, meteredData: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select Option</option>
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Energy Modeling Tool <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    required
-                    value={projectData.energyModelingTool}
-                    onChange={(e) => setProjectData({...projectData, energyModelingTool: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select Tool</option>
-                    <option value="iesve">IESVE</option>
-                    <option value="openstudio">OpenStudio</option>
-                    <option value="equest">eQuest</option>
-                    <option value="other">Other</option>
                   </select>
                 </div>
                 <div>
