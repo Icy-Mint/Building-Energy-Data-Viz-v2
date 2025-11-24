@@ -330,7 +330,7 @@ export default function EnergyDashboard() {
     
     // Only show placeholder if no category is selected, otherwise draw the line chart
     if (selectedCategory === "Select a category") {
-      setupLineChart();
+    setupLineChart();
     } else {
       showMonthlyTrend(selectedCategory);
     }
