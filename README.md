@@ -18,6 +18,7 @@
 ## Table of Contents
 
 - [Description](#-description--overview)
+- [Sample Dashboard](#-sample-dashboard)
 - [Features](#-features)
 - [Tech Stack](#-tech-stack)
 - [Installation](#-installation)
@@ -46,6 +47,68 @@ The application generates comprehensive visualizations including annual comparis
 - **Responsive Design**: Beautiful UI built with Tailwind CSS
 - **Type-Safe**: Full TypeScript implementation for reliability
 - **Export Capabilities**: Generate PDF reports from your dashboards
+
+---
+
+## Sample Dashboard
+
+The Energy Visualization Dashboard provides a comprehensive view of building energy consumption data through three interactive charts arranged in a 2x1 grid layout:
+
+### 1. Current vs Future Energy Consumption (Stacked Bar Chart)
+- **Location**: Top-left
+- **Purpose**: Compare annual energy consumption between current and future scenarios
+- **Y-axis**: Annual Energy Consumption (Million BTU), ranging from 0 to 6,000
+- **X-axis**: Energy Scenario (Current and Future)
+- **Features**:
+  - Stacked bars showing breakdown by energy category
+  - Color-coded segments for each energy type:
+    - Interior Lighting (Light Red/Pink)
+    - Receptacle Equipment (Light Green) - typically the largest component
+    - Space Heating (Red/Coral)
+    - Service Water Heating (Yellow)
+    - Space Cooling (Light Blue)
+    - Heat Rejection (Grey-blue)
+    - Interior Central Fans (Light Purple)
+    - Interior Local Fans (Orange)
+    - Exhaust Fans (Pink)
+    - Pumps (Light Grey)
+  - Visual comparison of total consumption reduction between scenarios
+
+### 2. Current Energy Consumption (Donut Chart)
+- **Location**: Top-right
+- **Purpose**: Visualize percentage breakdown of current energy consumption by category
+- **Features**:
+  - Center label showing "Current"
+  - Segments sized proportionally to consumption percentage
+  - Major segments display percentage labels (e.g., Receptacle Equipment: 40.4%, Interior Lighting: 26.5%, Space Heating: 15.1%)
+  - Same color scheme as stacked bar chart for consistency
+  - Quick identification of dominant energy consumption categories
+
+### 3. Monthly Energy Consumption (Line Chart)
+- **Location**: Bottom (full width)
+- **Purpose**: Display time-series trends showing monthly variation in energy consumption
+- **Y-axis**: Energy Consumption (MBtu), ranging from 0 to 250
+- **X-axis**: Month (January through December)
+- **Features**:
+  - **Dual-line visualization**:
+    - Current scenario (Dark Grey line with darker grey data points)
+    - Future scenario (Light Green line with lighter green data points)
+  - **Seasonal shading**:
+    - Heating Season (light blue background): January-April and October-December
+    - Cooling Season (light red background): May-September
+    - Vertical dashed lines marking season transitions
+  - **Smooth curved lines** connecting all data points
+  - **Trend analysis**: Shows peak consumption periods (typically April and August) and seasonal patterns
+  - **Reduction visualization**: Future line consistently below current line, demonstrating projected energy savings
+
+### Dashboard Insights
+
+The dashboard enables users to:
+- **Compare scenarios**: Understand the impact of energy efficiency improvements
+- **Identify patterns**: Recognize seasonal consumption trends and peak usage periods
+- **Analyze categories**: Determine which energy end-uses consume the most energy
+- **Track progress**: Monitor monthly variations and year-over-year changes
+- **Make decisions**: Use data-driven insights for energy management and optimization
 
 ---
 
