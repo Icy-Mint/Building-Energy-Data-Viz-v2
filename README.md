@@ -54,6 +54,8 @@ The application generates comprehensive visualizations including annual comparis
 
 The Energy Visualization Dashboard provides a comprehensive view of building energy consumption data through three interactive charts arranged in a 2x1 grid layout:
 
+
+
 ![Dashboard Graph](public/images/dashboard_sample.png)
 
 ### 1. Current vs Future Energy Consumption (Stacked Bar Chart)
