@@ -17,19 +17,19 @@
 
 ## Table of Contents
 
-- [Description](#-description--overview)
-- [Sample Dashboard](#-sample-dashboard)
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [Installation](#-installation)
-- [Usage Guide](#-usage-guide)
-- [Project Structure](#-project-structure)
-- [Configuration](#-configuration)
-- [Scripts / Commands](#-scripts--commands)
-- [API Endpoints](#-api-endpoints)
-- [Deployment](#-deployment-instructions)
-- [Troubleshooting](#-troubleshooting)
-- [License](#-license)
+- [Description](#description--overview)
+- [Sample Dashboard](#sample-dashboard)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Installation](#installation)
+- [Usage Guide](#usage-guide)
+- [Project Structure](#project-structure)
+- [Configuration](#configuration)
+- [Scripts / Commands](#scripts--commands)
+- [API Endpoints](#api-endpoints)
+- [Deployment](#deployment-instructions)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
 ---
 
@@ -53,6 +53,8 @@ The application generates comprehensive visualizations including annual comparis
 ## Sample Dashboard
 
 The Energy Visualization Dashboard provides a comprehensive view of building energy consumption data through three interactive charts arranged in a 2x1 grid layout:
+
+![Dashboard Graph](public/images/dashboard_sample.png)
 
 ### 1. Current vs Future Energy Consumption (Stacked Bar Chart)
 - **Location**: Top-left
