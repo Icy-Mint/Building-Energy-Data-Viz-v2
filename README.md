@@ -5,6 +5,7 @@
 ![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
+![Next.js](https://img.shields.io/badge/Next.js-14.2-black)
 ![React](https://img.shields.io/badge/React-18.3-blue)
 
 **Transform CSV energy data into interactive dashboards with AI-powered insights**
@@ -35,18 +36,19 @@
 
 ## Description / Overview
 
-**Energy Analysis Viz** is a modern web application designed to transform CSV energy data into interactive, visually compelling dashboards. Built with React and TypeScript, it provides a seamless workflow for uploading, parsing, and visualizing energy consumption data with an integrated AI chatbot assistant for intelligent data interpretation.
+**Energy Analysis Viz** is a modern web application designed to transform CSV energy data into interactive, visually compelling dashboards. Built with Next.js 14 and TypeScript, it provides a seamless workflow for uploading, parsing, and visualizing energy consumption data with an integrated AI chatbot assistant for intelligent data interpretation.
 
 The application generates comprehensive visualizations including annual comparisons, category breakdowns, and monthly trend analysis. The AI-powered chatbot helps users understand their data, interpret charts, and discover insights.
 
 ### Key Highlights
 
-- **Fast & Modern**: Built with Vite for lightning-fast development and builds
+- **Fast & Modern**: Built with Next.js 14 for optimal performance and SEO
 - **Interactive Visualizations**: Multiple chart types powered by D3.js and Recharts
 - **AI Assistant**: Integrated chatbot for data interpretation and guidance
 - **Responsive Design**: Beautiful UI built with Tailwind CSS
 - **Type-Safe**: Full TypeScript implementation for reliability
 - **Export Capabilities**: Generate PDF reports from your dashboards
+- **Server-Side Rendering**: Optimized performance with Next.js App Router
 
 ---
 
@@ -56,7 +58,7 @@ The Energy Visualization Dashboard provides a comprehensive view of building ene
 
 
 
-![Dashboard Graph](public/images/dashboard_sample.png)
+![Dashboard Graph](/images/dashboard_sample.png)
 
 ### 1. Current vs Future Energy Consumption (Stacked Bar Chart)
 - **Location**: Top-left
@@ -91,18 +93,22 @@ The Energy Visualization Dashboard provides a comprehensive view of building ene
 ### 3. Monthly Energy Consumption (Line Chart)
 - **Location**: Bottom (full width)
 - **Purpose**: Display time-series trends showing monthly variation in energy consumption
-- **Y-axis**: Energy Consumption (MBtu), ranging from 0 to 250
+- **Y-axis**: Energy Consumption (MBtu), ranging from 0 to 1000
 - **X-axis**: Month (January through December)
+- **Data**: Yearly consumption in MBtu for an office building in New York City
 - **Features**:
   - **Dual-line visualization**:
-    - Current scenario (Dark Grey line with darker grey data points)
-    - Future scenario (Light Green line with lighter green data points)
+    - Current scenario (Light Green line `#B7E4C7` with data points)
+    - Future scenario (Darker Green line `#52B788` with data points)
   - **Seasonal shading**:
-    - Heating Season (light blue background): January-April and October-December
-    - Cooling Season (light red background): May-September
-    - Vertical dashed lines marking season transitions
-  - **Smooth curved lines** connecting all data points
-  - **Trend analysis**: Shows peak consumption periods (typically April and August) and seasonal patterns
+    - Heating Season (warm background): January-April and October-December
+    - Cooling Season (light green background `#C7E7D8`): May-September
+  - **Smooth curved lines** connecting all data points with cubic Bézier curves
+  - **Interactive features**:
+    - Horizontal grid lines for all Y-axis values (0, 200, 400, 600, 800, 1000)
+    - Dynamic tooltip on hover showing Current and Future values
+    - Smooth line drawing animation on initial load
+  - **Trend analysis**: Shows peak consumption periods and seasonal patterns
   - **Reduction visualization**: Future line consistently below current line, demonstrating projected energy savings
 
 ### Dashboard Insights
@@ -160,11 +166,10 @@ The dashboard enables users to:
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
+| **Next.js** | 14.2.0 | React framework with App Router |
 | **React** | 18.3.1 | UI framework |
 | **TypeScript** | 5.9.3 | Type safety |
-| **Vite** | 5.4.8 | Build tool & dev server |
 | **Tailwind CSS** | 3.4.12 | Styling |
-| **React Router** | 6.26.2 | Client-side routing |
 | **D3.js** | 7.9.0 | Data visualization |
 | **Recharts** | 2.13.0 | Chart components |
 | **PapaParse** | 5.4.1 | CSV parsing |
@@ -176,13 +181,10 @@ The dashboard enables users to:
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
+| **Next.js API Routes** | 14.2.0 | Serverless API endpoints |
 | **Node.js** | - | Runtime environment |
-| **Express** | 4.18.2 | Web framework |
 | **TypeScript** | 5.9.3 | Type safety |
-| **tsx** | 4.7.0 | TypeScript execution |
-| **OpenAI API** | 4.20.1 | AI chatbot integration |
-| **CORS** | 2.8.5 | Cross-origin resource sharing |
-| **dotenv** | 16.3.1 | Environment variable management |
+| **OpenAI API** | - | AI chatbot integration (via API routes) |
 
 ### Development Tools
 
@@ -206,59 +208,33 @@ The dashboard enables users to:
 
 ```bash
 git clone <repository-url>
-cd energy-viz
+cd EnergyAnalysisViz
 ```
 
-#### 2. Install Frontend Dependencies
+#### 2. Install Dependencies
 
 ```bash
 npm install
 ```
 
-#### 3. Install Backend Dependencies
+#### 3. Configure Environment Variables
 
-```bash
-cd server
-npm install
-cd ..
-```
-
-#### 4. Configure Environment Variables
-
-**Frontend Configuration** (`.env` in root directory):
-
-Create a `.env` file in the project root:
-
-```env
-VITE_API_BASE_URL=http://localhost:5000
-```
-
-**Backend Configuration** (`server/.env`):
-
-Create a `.env` file in the `server` directory:
+Create a `.env.local` file in the project root:
 
 ```env
 # OpenAI API Configuration
 OPENAI_API_KEY=your_openai_api_key_here
 OPENAI_MODEL=gpt-4o-mini
-
-# Server Configuration
-PORT=5000
-CLIENT_ORIGIN=http://localhost:5173
 ```
 
 > **Important**: Replace `your_openai_api_key_here` with your actual OpenAI API key. You can obtain one from [OpenAI's Platform](https://platform.openai.com/api-keys).
 
-#### 5. Verify Installation
+#### 4. Verify Installation
 
 Check that all dependencies are installed correctly:
 
 ```bash
-# Frontend
 npm list --depth=0
-
-# Backend
-cd server && npm list --depth=0 && cd ..
 ```
 
 ---
@@ -267,35 +243,22 @@ cd server && npm list --depth=0 && cd ..
 
 ### Starting the Application
 
-#### Option 1: Run Both Frontend and Backend Together (Recommended)
+Start the Next.js development server:
 
 ```bash
-npm run dev:all
-```
-
-This command starts:
-- **Frontend** on `http://localhost:5173`
-- **Backend** on `http://localhost:5000`
-
-#### Option 2: Run Services Separately
-
-**Start Frontend:**
-```bash
-npm run dev:client
-# or
 npm run dev
 ```
 
-**Start Backend:**
-```bash
-npm run dev:server
-```
+This command starts:
+- **Next.js Application** on `http://localhost:3000`
+- **API Routes** are automatically available at `http://localhost:3000/api/*`
 
 ### Using the Application
 
-#### 1. **Welcome Page**
-   - Navigate to the home page to learn about the application
-   - Click "Get Started" or navigate to the Upload page
+#### 1. **Landing Page**
+   - Navigate to the home page (`/`) to view the interactive energy visualization
+   - Scroll down to explore features and the dynamic chart
+   - Click "Import Data" or "Get a Demo" to get started
 
 #### 2. **Upload CSV Data**
    - Go to the Upload page (`/upload`)
@@ -306,6 +269,7 @@ npm run dev:server
    - Click "Process and View Dashboard"
 
 #### 3. **Explore the Dashboard**
+   - Navigate to the Dashboard page (`/dashboard`)
    - View annual energy consumption comparisons
    - Switch between Current and Future scenarios
    - Select categories to view monthly trends
@@ -334,56 +298,53 @@ npm run dev:server
 ## Project Structure
 
 ```
-energy-viz/
+EnergyAnalysisViz/
 │
-├── public/                 # Static assets
-│   └── images/            # Image files
+├── app/                  # Next.js App Router
+│   ├── api/              # API routes
+│   │   ├── chat/         # Chat API endpoint
+│   │   └── auth/         # Authentication routes
+│   ├── dashboard/        # Dashboard page
+│   │   └── page.tsx
+│   ├── upload/           # Upload page
+│   │   └── page.tsx
+│   ├── layout.tsx         # Root layout
+│   ├── page.tsx          # Home/Landing page
+│   └── globals.css       # Global styles
 │
-├── server/                # Backend Express server
-│   ├── routes/            # API route handlers
-│   │   └── chat.ts       # Chat endpoint
-│   ├── utils/            # Utility functions
-│   │   └── openaiClient.ts  # OpenAI integration
-│   ├── index.ts          # Server entry point
-│   ├── package.json      # Server dependencies
-│   └── tsconfig.json     # TypeScript config
+├── components/           # React components
+│   ├── Chatbot.tsx       # AI chatbot component
+│   ├── Dashboard.tsx     # Dashboard component
+│   ├── EnergyChart.tsx   # Interactive chart component
+│   ├── EnergyDashboard.tsx  # Main dashboard logic
+│   ├── Landing.tsx       # Landing page component
+│   └── Upload.tsx        # File upload component
 │
-├── src/                   # Frontend source code
-│   ├── components/       # React components
-│   │   ├── Chatbot.tsx   # AI chatbot component
-│   │   ├── EnergyChart.tsx      # Chart component
-│   │   └── EnergyDashboard.tsx  # Main dashboard
-│   │
-│   ├── lib/              # Library code
-│   │   └── parsers/      # CSV parsing utilities
-│   │       └── index.ts
-│   │
-│   ├── pages/            # Page components
-│   │   ├── App.tsx      # Welcome/home page
-│   │   ├── Dashboard.tsx # Dashboard page
-│   │   └── Upload.tsx   # File upload page
-│   │
-│   ├── index.css        # Global styles
-│   └── main.tsx         # Application entry point
+├── public/               # Static assets
+│   └── images/           # Image files
+│       └── dashboard_sample.png
 │
-├── .env                  # Frontend environment variables
-├── index.html           # HTML template
-├── package.json         # Frontend dependencies & scripts
-├── vite.config.ts       # Vite configuration
-├── tailwind.config.js   # Tailwind CSS configuration
-├── tsconfig.json        # TypeScript configuration
-└── README.md           # This file
+├── .env.local            # Environment variables (not in git)
+├── next.config.js        # Next.js configuration
+├── package.json          # Dependencies & scripts
+├── postcss.config.js     # PostCSS configuration
+├── tailwind.config.js    # Tailwind CSS configuration
+├── tsconfig.json         # TypeScript configuration
+└── README.md             # This file
 ```
 
 ### Key Files Explained
 
-- **`src/main.tsx`**: Application entry point, sets up React Router
-- **`src/pages/Dashboard.tsx`**: Main dashboard page with chatbot integration
-- **`src/components/EnergyDashboard.tsx`**: Core dashboard logic and visualizations
-- **`src/components/Chatbot.tsx`**: Floating chatbot UI component
-- **`server/index.ts`**: Express server setup and middleware
-- **`server/routes/chat.ts`**: Chat API endpoint handler
-- **`server/utils/openaiClient.ts`**: OpenAI API client wrapper
+- **`app/page.tsx`**: Home/Landing page entry point
+- **`app/layout.tsx`**: Root layout with metadata and global styles
+- **`app/dashboard/page.tsx`**: Dashboard page route
+- **`app/upload/page.tsx`**: Upload page route
+- **`app/api/chat/`**: Chat API route handler (Next.js API route)
+- **`components/Landing.tsx`**: Landing page with interactive visualizations
+- **`components/Dashboard.tsx`**: Main dashboard component
+- **`components/EnergyChart.tsx`**: Interactive energy consumption chart
+- **`components/Chatbot.tsx`**: Floating chatbot UI component
+- **`components/EnergyDashboard.tsx`**: Core dashboard logic and visualizations
 
 ---
 
@@ -391,20 +352,14 @@ energy-viz/
 
 ### Environment Variables
 
-#### Frontend (`.env`)
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `VITE_API_BASE_URL` | Backend API base URL | `http://localhost:5000` |
-
-#### Backend (`server/.env`)
+Create a `.env.local` file in the project root:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `OPENAI_API_KEY` | Your OpenAI API key | **Required** |
 | `OPENAI_MODEL` | OpenAI model to use | `gpt-4o-mini` |
-| `PORT` | Server port | `5000` |
-| `CLIENT_ORIGIN` | Allowed CORS origin | `http://localhost:5173` |
+
+> **Note**: `.env.local` is automatically ignored by git. Never commit your API keys.
 
 ### Tailwind CSS Configuration
 
@@ -415,13 +370,13 @@ The project uses Tailwind CSS with a custom configuration. Modify `tailwind.conf
 - Breakpoints
 - Custom utilities
 
-### Vite Configuration
+### Next.js Configuration
 
-The `vite.config.ts` file configures:
+The `next.config.js` file configures:
 
-- React plugin
+- React strict mode
 - Build options
-- Development server settings
+- Image optimization settings
 
 Modify as needed for your deployment requirements.
 
@@ -429,37 +384,24 @@ Modify as needed for your deployment requirements.
 
 ## Scripts / Commands
 
-### Root Directory Scripts
+### Available Scripts
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start Vite dev server (frontend only) |
-| `npm run dev:client` | Alias for `npm run dev` |
-| `npm run dev:server` | Start Express server (backend only) |
-| `npm run dev:all` | Start both frontend and backend concurrently |
-| `npm run build` | Build frontend for production |
-| `npm run preview` | Preview production build locally |
-
-### Server Directory Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start server with hot reload (tsx watch) |
-| `npm start` | Start server in production mode (tsx) |
+| `npm run dev` | Start Next.js development server on `http://localhost:3000` |
+| `npm run build` | Build the application for production |
+| `npm run start` | Start the production server (after `npm run build`) |
+| `npm run lint` | Run ESLint to check for code issues |
 
 ### Example Workflow
 
 ```bash
-# Development (both services)
-npm run dev:all
+# Development
+npm run dev
 
 # Production build
 npm run build
-npm run preview
-
-# Backend only (for testing)
-cd server
-npm run dev
+npm run start
 ```
 
 ---
@@ -468,21 +410,10 @@ npm run dev
 
 ### Base URL
 
-- **Development**: `http://localhost:5000`
-- **Production**: Configure via `VITE_API_BASE_URL`
+- **Development**: `http://localhost:3000`
+- **Production**: Your deployed Next.js application URL
 
 ### Endpoints
-
-#### `GET /health`
-
-Health check endpoint.
-
-**Response:**
-```json
-{
-  "status": "ok"
-}
-```
 
 #### `POST /api/chat`
 
@@ -515,97 +446,105 @@ Send a message to the AI chatbot.
 - `400`: Bad request (missing or invalid message)
 - `500`: Server error
 
+> **Note**: Next.js API routes are serverless functions that automatically handle routing. The chat endpoint is available at `/api/chat` when the application is running.
+
 ---
 
 ## Deployment Instructions
 
-### Frontend Deployment (Vercel, Netlify, etc.)
+### Recommended: Vercel Deployment
 
-1. **Build the application:**
-   ```bash
-   npm run build
-   ```
+Next.js applications are optimized for Vercel deployment:
+
+1. **Connect your repository to Vercel:**
+   - Go to [vercel.com](https://vercel.com)
+   - Import your GitHub/GitLab repository
+   - Vercel will auto-detect Next.js
 
 2. **Configure environment variables:**
-   - Set `VITE_API_BASE_URL` to your production backend URL
+   - Add `OPENAI_API_KEY` in Vercel dashboard
+   - Add `OPENAI_MODEL` (optional, defaults to `gpt-4o-mini`)
 
-3. **Deploy the `dist` folder:**
-   - The build output is in the `dist` directory
-   - Upload to your hosting provider
+3. **Deploy:**
+   - Vercel will automatically build and deploy
+   - Your app will be available at `your-app.vercel.app`
 
-#### Vercel Example
+#### Vercel CLI Alternative
 
 ```bash
 npm install -g vercel
 vercel
 ```
 
-#### Netlify Example
+### Other Platforms (Netlify, Railway, etc.)
 
-```bash
-npm install -g netlify-cli
-netlify deploy --prod --dir=dist
-```
+#### Netlify
 
-### Backend Deployment (Railway, Render, Heroku, etc.)
+1. **Build settings:**
+   - Build command: `npm run build`
+   - Publish directory: `.next`
 
-1. **Set environment variables:**
-   - `OPENAI_API_KEY`
-   - `OPENAI_MODEL` (optional)
-   - `PORT` (usually auto-set by platform)
-   - `CLIENT_ORIGIN` (your frontend URL)
+2. **Environment variables:**
+   - Add `OPENAI_API_KEY` in Netlify dashboard
 
-2. **Deploy the server directory:**
-   - Most platforms auto-detect Node.js
-   - Ensure the start script is: `cd server && npm start`
+3. **Deploy:**
+   ```bash
+   npm install -g netlify-cli
+   netlify deploy --prod
+   ```
 
-#### Railway Example
+#### Railway
 
 1. Connect your repository
-2. Set root directory to `server`
-3. Add environment variables
-4. Deploy
-
-#### Render Example
-
-1. Create a new Web Service
-2. Set build command: `cd server && npm install`
+2. Set build command: `npm install && npm run build`
 3. Set start command: `npm start`
-4. Add environment variables
+4. Add environment variables in Railway dashboard
 
-### Docker Deployment (Optional)
+#### Docker Deployment (Optional)
 
 Create a `Dockerfile` in the root:
 
 ```dockerfile
-# Frontend
-FROM node:18-alpine AS frontend
+FROM node:18-alpine AS base
+
+# Install dependencies
+FROM base AS deps
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm ci
+
+# Build application
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-# Backend
-FROM node:18-alpine
+# Production image
+FROM base AS runner
 WORKDIR /app
-COPY server/package*.json ./server/
-RUN cd server && npm install
-COPY server ./server
-COPY --from=frontend /app/dist ./public
-EXPOSE 5000
-CMD ["node", "server/index.js"]
+ENV NODE_ENV production
+
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+EXPOSE 3000
+ENV PORT 3000
+
+CMD ["node", "server.js"]
 ```
+
+> **Note**: For Docker, you may need to configure `output: 'standalone'` in `next.config.js`.
 
 ### Production Checklist
 
-- [ ] Set `VITE_API_BASE_URL` to production backend URL
-- [ ] Configure CORS in backend for production frontend domain
-- [ ] Set secure `OPENAI_API_KEY` in backend environment
-- [ ] Enable HTTPS for both frontend and backend
-- [ ] Configure error logging and monitoring
-- [ ] Set up rate limiting for API endpoints
+- [ ] Set `OPENAI_API_KEY` in your deployment platform's environment variables
+- [ ] Enable HTTPS (automatic on Vercel/Netlify)
+- [ ] Configure custom domain (optional)
+- [ ] Set up error logging and monitoring
 - [ ] Test chatbot functionality with production API key
+- [ ] Verify all API routes are working correctly
 
 ---
 
@@ -613,35 +552,37 @@ CMD ["node", "server/index.js"]
 
 ### Common Issues
 
-#### Backend Server Not Starting
+#### Development Server Not Starting
 
-**Problem**: Server fails to start or crashes immediately.
+**Problem**: Next.js dev server fails to start or crashes immediately.
 
 **Solutions**:
 - Verify Node.js version: `node --version` (should be 18+)
-- Check if port 5000 is already in use:
+- Check if port 3000 is already in use:
   ```bash
   # Windows
-  netstat -ano | findstr :5000
+  netstat -ano | findstr :3000
   
   # Mac/Linux
-  lsof -i :5000
+  lsof -i :3000
   ```
-- Ensure all dependencies are installed: `cd server && npm install`
-- Check for TypeScript errors: `cd server && npx tsc --noEmit`
+- Ensure all dependencies are installed: `npm install`
+- Check for TypeScript errors: `npx tsc --noEmit`
+- Clear Next.js cache: `rm -rf .next` (or `rmdir /s .next` on Windows)
 
 #### Chatbot Not Responding
 
 **Problem**: Chatbot shows error messages or doesn't respond.
 
 **Solutions**:
-- Verify `OPENAI_API_KEY` is set correctly in `server/.env`
-- Check that the backend server is running on port 5000
-- Verify `VITE_API_BASE_URL` matches your backend URL
-- Check browser console for CORS errors
+- Verify `OPENAI_API_KEY` is set correctly in `.env.local`
+- Ensure the file is named `.env.local` (not `.env`)
+- Restart the development server after changing environment variables
+- Check browser console for errors
+- Verify the API route exists at `app/api/chat/route.ts` (or similar)
 - Test the API directly:
   ```bash
-  curl -X POST http://localhost:5000/api/chat \
+  curl -X POST http://localhost:3000/api/chat \
     -H "Content-Type: application/json" \
     -d '{"message":"test"}'
   ```
@@ -666,14 +607,16 @@ CMD ["node", "server/index.js"]
 - Check for missing dependencies
 - Verify all environment variables are set
 
-#### CORS Errors
+#### Build Errors
 
-**Problem**: Browser shows CORS errors when calling the API.
+**Problem**: `npm run build` fails with TypeScript or other errors.
 
 **Solutions**:
-- Verify `CLIENT_ORIGIN` in `server/.env` matches your frontend URL
-- Check that CORS middleware is properly configured
-- Ensure backend is running before frontend makes requests
+- Run type checking: `npx tsc --noEmit`
+- Clear Next.js cache: `rm -rf .next` (or `rmdir /s .next` on Windows)
+- Clear node_modules and reinstall: `rm -rf node_modules && npm install`
+- Check for missing dependencies
+- Verify all environment variables are set (if required at build time)
 
 ### Getting Help
 
@@ -722,5 +665,7 @@ SOFTWARE.
 **Made with care for energy analysis and visualization**
 
 Star this repo if you find it helpful!
+
+</div>
 
 </div>
