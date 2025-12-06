@@ -5,6 +5,7 @@ import { useState, useRef } from 'react';
 import Papa from 'papaparse';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { uploadCsvFile } from '@/lib/upload';
 
 export type ParsedDataset = {
   columns: string[];
@@ -39,6 +40,14 @@ export default function Upload() {
   const [futureFile, setFutureFile] = useState<File | null>(null);
   const [currentPreview, setCurrentPreview] = useState<string[][]>([]);
   const [futurePreview, setFuturePreview] = useState<string[][]>([]);
+  const [uploadStatus, setUploadStatus] = useState<{
+    current: 'idle' | 'uploading' | 'success' | 'error';
+    future: 'idle' | 'uploading' | 'success' | 'error';
+  }>({
+    current: 'idle',
+    future: 'idle',
+  });
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [projectData, setProjectData] = useState<ProjectData>({
     projectName: '',
     projectSqft: '',
@@ -120,7 +129,7 @@ export default function Upload() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (selectedFormat !== 'iesve') {
@@ -133,6 +142,15 @@ export default function Upload() {
       return;
     }
 
+    // TODO: Replace with actual auth implementation to get userId
+    // For now, using a placeholder - replace this with your auth system
+    const userId = 'temp-user-id'; // Replace with: await getCurrentUserId() or from auth session
+    
+    if (!userId) {
+      setUploadError('User not authenticated. Please log in.');
+      return;
+    }
+
     // Store project data in localStorage
     Object.entries(projectData).forEach(([key, value]) => {
       if (value) {
@@ -140,7 +158,43 @@ export default function Upload() {
       }
     });
 
-    // Read and store raw CSV text for dashboard visualization
+    setUploadError(null);
+    setUploadStatus({ current: 'uploading', future: 'idle' });
+
+    // Upload current file to Supabase
+    const currentUploadResult = await uploadCsvFile(currentFile, userId);
+    
+    if (!currentUploadResult.success) {
+      setUploadStatus({ current: 'error', future: 'idle' });
+      setUploadError(currentUploadResult.error || 'Failed to upload current file');
+      return;
+    }
+
+    setUploadStatus({ current: 'success', future: futureFile ? 'uploading' : 'idle' });
+
+    // Upload future file if available
+    let futureUploadResult = null;
+    if (futureFile) {
+      futureUploadResult = await uploadCsvFile(futureFile, userId);
+      
+      if (!futureUploadResult.success) {
+        setUploadStatus(prev => ({ ...prev, future: 'error' }));
+        setUploadError(futureUploadResult.error || 'Failed to upload future file');
+        // Continue with current file processing even if future upload fails
+      } else {
+        setUploadStatus(prev => ({ ...prev, future: 'success' }));
+      }
+    }
+
+    // Store file IDs in sessionStorage for dashboard reference
+    if (currentUploadResult.data) {
+      sessionStorage.setItem('currentFileId', currentUploadResult.data.id.toString());
+    }
+    if (futureUploadResult?.data) {
+      sessionStorage.setItem('futureFileId', futureUploadResult.data.id.toString());
+    }
+
+    // Read and store raw CSV text for dashboard visualization (existing functionality)
     const readCurrentFile = async () => {
       const text = await currentFile.text();
       sessionStorage.setItem('iesveCsvData', text);
@@ -515,8 +569,19 @@ export default function Upload() {
               <p className="text-xs text-gray-500 mt-4">Your data stays private. CSV files are processed only within your session and are not stored permanently or shared with third parties.</p>
               
               {currentFile && (
-                <div className="mt-4 text-green-600 text-sm">
-                  {currentFile.name} uploaded successfully.
+                <div className="mt-4">
+                  <div className="text-sm font-medium text-gray-700">
+                    {currentFile.name}
+                  </div>
+                  {uploadStatus.current === 'uploading' && (
+                    <div className="text-blue-600 text-sm mt-1">Uploading to server...</div>
+                  )}
+                  {uploadStatus.current === 'success' && (
+                    <div className="text-green-600 text-sm mt-1">✓ Uploaded successfully</div>
+                  )}
+                  {uploadStatus.current === 'error' && (
+                    <div className="text-red-600 text-sm mt-1">✗ Upload failed</div>
+                  )}
                 </div>
               )}
               
@@ -552,8 +617,19 @@ export default function Upload() {
               </div>
               
               {futureFile && (
-                <div className="mt-4 text-green-600 text-sm">
-                  {futureFile.name} uploaded successfully.
+                <div className="mt-4">
+                  <div className="text-sm font-medium text-gray-700">
+                    {futureFile.name}
+                  </div>
+                  {uploadStatus.future === 'uploading' && (
+                    <div className="text-blue-600 text-sm mt-1">Uploading to server...</div>
+                  )}
+                  {uploadStatus.future === 'success' && (
+                    <div className="text-green-600 text-sm mt-1">✓ Uploaded successfully</div>
+                  )}
+                  {uploadStatus.future === 'error' && (
+                    <div className="text-red-600 text-sm mt-1">✗ Upload failed</div>
+                  )}
                 </div>
               )}
               
@@ -573,6 +649,9 @@ export default function Upload() {
 
         {errorMessage && (
             <div className="mt-4 text-red-600 text-center">{errorMessage}</div>
+        )}
+        {uploadError && (
+            <div className="mt-4 text-red-600 text-center bg-red-50 p-3 rounded">{uploadError}</div>
         )}
         </form>
       </div>
