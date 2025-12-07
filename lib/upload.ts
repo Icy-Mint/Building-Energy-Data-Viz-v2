@@ -2,9 +2,13 @@
  * Helper function to upload CSV files to Supabase Storage
  * and save metadata to the database
  */
+/**
+ * Helper function to upload CSV files to Supabase Storage
+ * and save metadata to the database
+ * Note: User ID is retrieved server-side from auth session
+ */
 export async function uploadCsvFile(
-  file: File,
-  userId: string
+  file: File
 ): Promise<{
   success: boolean;
   data?: {
@@ -20,7 +24,7 @@ export async function uploadCsvFile(
   try {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('userId', userId);
+    // Note: userId is now retrieved server-side from auth session
 
     const response = await fetch('/api/upload', {
       method: 'POST',
@@ -52,21 +56,8 @@ export async function uploadCsvFile(
 }
 
 /**
- * Helper function to get the current user ID
- * This should be replaced with actual auth implementation
- * For now, returns a placeholder that should be replaced
+ * Re-export auth functions from client-side auth helper
+ * This allows the Upload component to use client-side auth
  */
-export function getCurrentUserId(): string | null {
-  // TODO: Replace with actual auth implementation
-  // Example with Supabase Auth:
-  // const { data: { user } } = await supabase.auth.getUser();
-  // return user?.id || null;
-  
-  // Example with BetterAuth:
-  // const session = await auth();
-  // return session?.user?.id || null;
-  
-  // For now, return null - the Upload component should handle this
-  return null;
-}
+export { getCurrentUserId, getCurrentUser } from '@/lib/supabase/client';
 

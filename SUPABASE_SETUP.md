@@ -2,6 +2,10 @@
 
 This document outlines the setup steps required for the database layer integration.
 
+> **Note**: All SQL files referenced in this guide are located in the `db/` folder:
+> - `db/supabase-schema.sql` - Database table creation
+> - `db/supabase-rls-policies.sql` - Row Level Security policies
+
 ## 1. Environment Variables
 
 Add the following environment variables to your `.env.local` file:
@@ -37,179 +41,130 @@ DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.[your-project-ref].supabas
 4. Set as **Public** (or Private with RLS policies - see below)
 5. Click **Create bucket**
 
-## 3. Run Database Migrations
+## 3. Create Database Tables
 
-After installing dependencies, run Drizzle migrations to create the database tables:
+You have two options to create the database tables:
+
+### Option A: Using SQL Files (Recommended)
+
+1. Open Supabase Dashboard > **SQL Editor**
+2. Copy and paste the contents of `db/supabase-schema.sql`
+3. Click **Run** to create all tables
+4. Run the verification queries at the bottom of the file to confirm tables were created
+
+### Option B: Using Drizzle Migrations
+
+After installing dependencies, run Drizzle migrations:
 
 ```bash
 # Install dependencies first
 npm install
 
 # Generate migration files
-npx drizzle-kit generate
+npm run db:generate
 
 # Apply migrations to your database
-npx drizzle-kit push
+npm run db:push
 ```
 
 Or use Drizzle Studio to inspect your database:
 
 ```bash
-npx drizzle-kit studio
+npm run db:studio
 ```
+
+> **Note**: The SQL files in `db/` folder are ready to use and include verification queries. This is the recommended approach for initial setup.
 
 ## 4. Row Level Security (RLS) Policies
 
-### For the `files` table:
+After creating the tables, you need to enable RLS policies. The complete SQL script is available in `db/supabase-rls-policies.sql`.
 
-```sql
--- Enable RLS
-ALTER TABLE files ENABLE ROW LEVEL SECURITY;
+**To apply RLS policies:**
 
--- Policy: Users can only see their own files
-CREATE POLICY "Users can view own files"
-ON files FOR SELECT
-USING (auth.uid() = user_id);
+1. Open Supabase Dashboard > **SQL Editor**
+2. Copy and paste the contents of `db/supabase-rls-policies.sql`
+3. Click **Run** to enable all RLS policies
 
--- Policy: Users can insert their own files
-CREATE POLICY "Users can insert own files"
-ON files FOR INSERT
-WITH CHECK (auth.uid() = user_id);
+The script includes:
+- RLS policies for `files` table (SELECT, INSERT, UPDATE, DELETE)
+- RLS policies for `dashboards` table (SELECT, INSERT, UPDATE, DELETE)
+- RLS policies for `users` table (SELECT, UPDATE)
+- Storage bucket policies (if using Private bucket)
 
--- Policy: Users can update their own files
-CREATE POLICY "Users can update own files"
-ON files FOR UPDATE
-USING (auth.uid() = user_id);
-
--- Policy: Users can delete their own files
-CREATE POLICY "Users can delete own files"
-ON files FOR DELETE
-USING (auth.uid() = user_id);
-```
-
-### For the `dashboards` table:
-
-```sql
--- Enable RLS
-ALTER TABLE dashboards ENABLE ROW LEVEL SECURITY;
-
--- Policy: Users can only see their own dashboards
-CREATE POLICY "Users can view own dashboards"
-ON dashboards FOR SELECT
-USING (auth.uid() = user_id);
-
--- Policy: Users can insert their own dashboards
-CREATE POLICY "Users can insert own dashboards"
-ON dashboards FOR INSERT
-WITH CHECK (auth.uid() = user_id);
-
--- Policy: Users can update their own dashboards
-CREATE POLICY "Users can update own dashboards"
-ON dashboards FOR UPDATE
-USING (auth.uid() = user_id);
-
--- Policy: Users can delete their own dashboards
-CREATE POLICY "Users can delete own dashboards"
-ON dashboards FOR DELETE
-USING (auth.uid() = user_id);
-```
-
-### For the `users` table:
-
-```sql
--- Enable RLS
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-
--- Policy: Users can view their own profile
-CREATE POLICY "Users can view own profile"
-ON users FOR SELECT
-USING (auth.uid() = id);
-
--- Policy: Users can update their own profile
-CREATE POLICY "Users can update own profile"
-ON users FOR UPDATE
-USING (auth.uid() = id);
-```
+> **Note**: All policies ensure users can only access their own data using `auth.uid() = user_id` checks.
 
 ## 5. Storage Bucket Policies (if using Private bucket)
 
-If you set the `csv_uploads` bucket as Private, add these policies:
+If you set the `csv_uploads` bucket as Private, storage policies are included in `db/supabase-rls-policies.sql`. The policies ensure:
+- Users can upload files to their own folder (`{userId}/filename.csv`)
+- Users can only view their own files
+- Users can only delete their own files
 
-```sql
--- Policy: Users can upload files to their own folder
-CREATE POLICY "Users can upload own files"
-ON storage.objects FOR INSERT
-WITH CHECK (
-  bucket_id = 'csv_uploads' AND
-  (storage.foldername(name))[1] = auth.uid()::text
-);
-
--- Policy: Users can view their own files
-CREATE POLICY "Users can view own files"
-ON storage.objects FOR SELECT
-USING (
-  bucket_id = 'csv_uploads' AND
-  (storage.foldername(name))[1] = auth.uid()::text
-);
-
--- Policy: Users can delete their own files
-CREATE POLICY "Users can delete own files"
-ON storage.objects FOR DELETE
-USING (
-  bucket_id = 'csv_uploads' AND
-  (storage.foldername(name))[1] = auth.uid()::text
-);
-```
+> **Note**: If using a Public bucket, storage policies are not required. The application uses service role key for uploads, which bypasses RLS.
 
 ## 6. Authentication Integration
 
-The current implementation uses a placeholder for user ID. You need to integrate your authentication system:
+✅ **Authentication is already integrated!** The project uses Supabase Auth with:
 
-### Option A: Supabase Auth
+- **Client-side auth** (`lib/supabase/client.ts`): For React components
+- **Server-side auth** (`lib/supabase/auth.ts`): For API routes
+- **Automatic user ID retrieval**: Both Upload component and API routes use auth
 
-If using Supabase Auth, update `lib/upload.ts`:
+### Enable Supabase Authentication
 
-```typescript
-import { createClient } from '@supabase/supabase-js';
+1. Go to Supabase Dashboard > **Authentication** > **Providers**
+2. Enable **Email** provider
+3. Configure email templates if needed
 
-export async function getCurrentUserId(): Promise<string | null> {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  return user?.id || null;
-}
+### Sync Auth Users to Database (Recommended)
+
+To automatically create user records when users sign up, run this SQL in Supabase SQL Editor:
+
+```sql
+-- Function to handle new user creation
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.users (id, email, created_at)
+  VALUES (NEW.id, NEW.email, NOW())
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to call function on new auth user
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 ```
 
-### Option B: BetterAuth
+This ensures that when a user signs up via Supabase Auth, a corresponding record is created in your `users` table.
 
-If using BetterAuth, update `lib/upload.ts`:
-
-```typescript
-import { auth } from '@/lib/auth'; // Adjust path as needed
-
-export async function getCurrentUserId(): Promise<string | null> {
-  const session = await auth();
-  return session?.user?.id || null;
-}
-```
-
-Then update `components/Upload.tsx` to use the auth function:
-
-```typescript
-// Replace the placeholder userId line with:
-const userId = await getCurrentUserId();
-```
+See `AUTH_SETUP.md` for detailed authentication usage and examples.
 
 ## 7. Testing
 
-1. Start your development server: `npm run dev`
-2. Navigate to the upload page
-3. Upload a CSV file
-4. Check Supabase Storage to verify the file was uploaded
-5. Check the `files` table in Supabase to verify metadata was saved
+1. **Test database connection**:
+   ```bash
+   npm run dev
+   # Visit http://localhost:3000/api/test-db
+   # Should return JSON with database connection status
+   ```
+
+2. **Test authentication** (if you have a login page):
+   - Sign up or sign in with a test account
+   - Verify user appears in Supabase Dashboard > Authentication > Users
+
+3. **Test file upload**:
+   - Navigate to the upload page (`/upload`)
+   - Sign in if not already authenticated
+   - Upload a CSV file
+   - Check Supabase Storage to verify the file was uploaded
+   - Check the `files` table in Supabase to verify metadata was saved
+
+4. **Verify RLS policies**:
+   - Try accessing files from a different user account
+   - Should only see your own files
 
 ## Troubleshooting
 

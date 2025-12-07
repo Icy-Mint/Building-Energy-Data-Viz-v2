@@ -5,7 +5,7 @@ import { useState, useRef } from 'react';
 import Papa from 'papaparse';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { uploadCsvFile } from '@/lib/upload';
+import { uploadCsvFile, getCurrentUserId } from '@/lib/upload';
 
 export type ParsedDataset = {
   columns: string[];
@@ -142,9 +142,8 @@ export default function Upload() {
       return;
     }
 
-    // TODO: Replace with actual auth implementation to get userId
-    // For now, using a placeholder - replace this with your auth system
-    const userId = 'temp-user-id'; // Replace with: await getCurrentUserId() or from auth session
+    // Get authenticated user ID
+    const userId = await getCurrentUserId();
     
     if (!userId) {
       setUploadError('User not authenticated. Please log in.');
@@ -162,7 +161,7 @@ export default function Upload() {
     setUploadStatus({ current: 'uploading', future: 'idle' });
 
     // Upload current file to Supabase
-    const currentUploadResult = await uploadCsvFile(currentFile, userId);
+    const currentUploadResult = await uploadCsvFile(currentFile);
     
     if (!currentUploadResult.success) {
       setUploadStatus({ current: 'error', future: 'idle' });
@@ -175,7 +174,7 @@ export default function Upload() {
     // Upload future file if available
     let futureUploadResult = null;
     if (futureFile) {
-      futureUploadResult = await uploadCsvFile(futureFile, userId);
+      futureUploadResult = await uploadCsvFile(futureFile);
       
       if (!futureUploadResult.success) {
         setUploadStatus(prev => ({ ...prev, future: 'error' }));

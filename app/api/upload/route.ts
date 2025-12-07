@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { getCurrentUserId } from '@/lib/supabase/auth';
 import { db } from '@/db';
 import { files } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   try {
+    // Get authenticated user ID from session
+    const userId = await getCurrentUserId();
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Please log in.' },
+        { status: 401 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const userId = formData.get('userId') as string;
 
     // Validate inputs
     if (!file) {
@@ -17,17 +27,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'No user ID provided' },
-        { status: 400 }
-      );
-    }
-
-    // Verify user exists (optional check - can be removed if auth handles this)
-    // For now, we'll trust the userId from the request
-    // In production, get userId from auth session instead
 
     // Validate file type
     if (!file.name.toLowerCase().endsWith('.csv')) {
@@ -107,13 +106,13 @@ export async function POST(request: NextRequest) {
 // GET endpoint to retrieve user's files
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const userId = searchParams.get('userId');
-
+    // Get authenticated user ID from session
+    const userId = await getCurrentUserId();
+    
     if (!userId) {
       return NextResponse.json(
-        { error: 'No user ID provided' },
-        { status: 400 }
+        { error: 'Unauthorized. Please log in.' },
+        { status: 401 }
       );
     }
 

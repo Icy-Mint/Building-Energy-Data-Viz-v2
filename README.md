@@ -28,8 +28,10 @@
 - [Configuration](#configuration)
 - [Scripts / Commands](#scripts--commands)
 - [API Endpoints](#api-endpoints)
+- [Database & Authentication](#database--authentication)
 - [Deployment](#deployment-instructions)
 - [Troubleshooting](#troubleshooting)
+- [Additional Resources](#additional-resources)
 - [License](#license)
 
 ---
@@ -45,6 +47,9 @@ The application generates comprehensive visualizations including annual comparis
 - **Fast & Modern**: Built with Next.js 14 for optimal performance and SEO
 - **Interactive Visualizations**: Multiple chart types powered by D3.js and Recharts
 - **AI Assistant**: Integrated chatbot for data interpretation and guidance
+- **Database-Backed**: Supabase PostgreSQL with Drizzle ORM for persistent data storage
+- **Secure Authentication**: Supabase Auth with Row Level Security (RLS) policies
+- **File Storage**: Supabase Storage for secure CSV file management
 - **Responsive Design**: Beautiful UI built with Tailwind CSS
 - **Type-Safe**: Full TypeScript implementation for reliability
 - **Export Capabilities**: Generate PDF reports from your dashboards
@@ -130,6 +135,8 @@ The dashboard enables users to:
   - Drag-and-drop file upload interface
   - Automatic header detection and data normalization
   - Real-time data preview before processing
+  - Secure file storage in Supabase Storage
+  - File metadata stored in PostgreSQL database
 
 - **Interactive Dashboard**
   - **Annual Comparison Charts**: Side-by-side visualization of current vs. future energy scenarios
@@ -155,8 +162,17 @@ The dashboard enables users to:
 - Clean, intuitive interface with smooth animations
 - Responsive design for desktop and tablet devices
 - Real-time data validation and error handling
-- Session-based data persistence
+- Persistent data storage with user authentication
+- Secure multi-user file management
 - Quick navigation between upload, dashboard, and home pages
+
+### Database & Authentication
+
+- **User Authentication**: Supabase Auth with email/password
+- **Database**: PostgreSQL with Drizzle ORM for type-safe queries
+- **File Storage**: Supabase Storage with organized file structure
+- **Security**: Row Level Security (RLS) policies for data isolation
+- **User Management**: Automatic user profile creation and management
 
 ---
 
@@ -184,6 +200,9 @@ The dashboard enables users to:
 | **Next.js API Routes** | 14.2.0 | Serverless API endpoints |
 | **Node.js** | - | Runtime environment |
 | **TypeScript** | 5.9.3 | Type safety |
+| **Supabase** | - | PostgreSQL database, Auth, and Storage |
+| **Drizzle ORM** | 0.29.0 | Type-safe database queries |
+| **PostgreSQL** | - | Relational database (via Supabase) |
 | **OpenAI API** | - | AI chatbot integration (via API routes) |
 
 ### Development Tools
@@ -200,6 +219,7 @@ The dashboard enables users to:
 
 - **Node.js** (v18 or higher recommended)
 - **npm** (v9 or higher) or **yarn**
+- **Supabase Account** (for database, auth, and storage)
 - **OpenAI API Key** (for chatbot functionality)
 
 ### Step-by-Step Setup
@@ -217,24 +237,89 @@ cd EnergyAnalysisViz
 npm install
 ```
 
-#### 3. Configure Environment Variables
+#### 3. Set Up Supabase
+
+1. **Create a Supabase project** at [supabase.com](https://supabase.com)
+2. **Get your project credentials**:
+   - Go to Settings > API
+   - Copy your `Project URL` and `anon` `public` key
+   - Copy your `service_role` key (keep this secret!)
+3. **Get your database connection string**:
+   - Go to Settings > Database
+   - Copy the connection string under "Connection string" > "URI"
+   - Replace `[YOUR-PASSWORD]` with your database password
+
+#### 4. Configure Environment Variables
 
 Create a `.env.local` file in the project root:
 
 ```env
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=https://[your-project-ref].supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+
+# Database Connection String
+DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.[your-project-ref].supabase.co:5432/postgres
+
 # OpenAI API Configuration
 OPENAI_API_KEY=your_openai_api_key_here
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-> **Important**: Replace `your_openai_api_key_here` with your actual OpenAI API key. You can obtain one from [OpenAI's Platform](https://platform.openai.com/api-keys).
+> **Important**: 
+> - Replace all placeholder values with your actual credentials
+> - Never commit `.env.local` to version control
+> - Get your OpenAI API key from [OpenAI's Platform](https://platform.openai.com/api-keys)
 
-#### 4. Verify Installation
+#### 5. Set Up Database
+
+1. **Run the database schema**:
+   - Open Supabase Dashboard > SQL Editor
+   - Copy and paste the contents of `db/supabase-schema.sql`
+   - Click "Run" to create the tables
+
+2. **Set up Row Level Security (RLS)**:
+   - In SQL Editor, copy and paste the contents of `db/supabase-rls-policies.sql`
+   - Click "Run" to enable RLS policies
+
+3. **Create Storage Bucket**:
+   - Go to Storage in Supabase Dashboard
+   - Click "New bucket"
+   - Name: `csv_uploads`
+   - Set as Public (or Private with storage policies)
+   - Click "Create bucket"
+
+4. **Optional: Sync Auth Users** (recommended):
+   - In SQL Editor, run this to auto-create user records:
+   ```sql
+   CREATE OR REPLACE FUNCTION public.handle_new_user()
+   RETURNS TRIGGER AS $$
+   BEGIN
+     INSERT INTO public.users (id, email, created_at)
+     VALUES (NEW.id, NEW.email, NOW());
+     RETURN NEW;
+   END;
+   $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+   CREATE TRIGGER on_auth_user_created
+     AFTER INSERT ON auth.users
+     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+   ```
+
+#### 6. Verify Installation
 
 Check that all dependencies are installed correctly:
 
 ```bash
 npm list --depth=0
+```
+
+Test the database connection:
+
+```bash
+# Visit http://localhost:3000/api/test-db after starting the dev server
+# Should return JSON with database connection status
 ```
 
 ---
@@ -260,15 +345,22 @@ This command starts:
    - Scroll down to explore features and the dynamic chart
    - Click "Import Data" or "Get a Demo" to get started
 
-#### 2. **Upload CSV Data**
+#### 2. **Sign In / Sign Up** (if not already authenticated)
+   - Create an account or sign in with your email
+   - Authentication is required to upload files
+   - See `AUTH_SETUP.md` for authentication setup details
+
+#### 3. **Upload CSV Data**
    - Go to the Upload page (`/upload`)
    - Upload your CSV file(s):
      - **Current Scenario**: Required
      - **Future Scenario**: Optional (for comparison)
+   - Files are automatically saved to Supabase Storage
+   - File metadata is stored in the database
    - Fill in project metadata (name, square footage, location, etc.)
-   - Click "Process and View Dashboard"
+   - Click "Upload and Analyze"
 
-#### 3. **Explore the Dashboard**
+#### 4. **Explore the Dashboard**
    - Navigate to the Dashboard page (`/dashboard`)
    - View annual energy consumption comparisons
    - Switch between Current and Future scenarios
@@ -276,7 +368,7 @@ This command starts:
    - Review AI-generated insights
    - Export charts as PDF
 
-#### 4. **Interact with the Chatbot**
+#### 5. **Interact with the Chatbot**
    - Click the floating chat button (bottom-right corner)
    - Ask questions about:
      - How to interpret charts
@@ -303,6 +395,8 @@ EnergyAnalysisViz/
 ├── app/                  # Next.js App Router
 │   ├── api/              # API routes
 │   │   ├── chat/         # Chat API endpoint
+│   │   ├── upload/       # File upload API endpoint
+│   │   ├── test-db/      # Database test endpoint
 │   │   └── auth/         # Authentication routes
 │   ├── dashboard/        # Dashboard page
 │   │   └── page.tsx
@@ -320,17 +414,34 @@ EnergyAnalysisViz/
 │   ├── Landing.tsx       # Landing page component
 │   └── Upload.tsx        # File upload component
 │
+├── db/                   # Database files
+│   ├── schema.ts         # Drizzle ORM schema definitions
+│   ├── index.ts          # Database connection
+│   ├── supabase-schema.sql    # SQL schema for Supabase
+│   └── supabase-rls-policies.sql  # RLS policies SQL
+│
+├── lib/                  # Utility libraries
+│   ├── supabase/         # Supabase clients
+│   │   ├── server.ts     # Server-side Supabase client
+│   │   ├── client.ts     # Client-side Supabase client
+│   │   └── auth.ts       # Server-side auth helpers
+│   └── upload.ts         # File upload helper functions
+│
 ├── public/               # Static assets
 │   └── images/           # Image files
 │       └── dashboard_sample.png
 │
 ├── .env.local            # Environment variables (not in git)
+├── drizzle.config.ts     # Drizzle Kit configuration
 ├── next.config.js        # Next.js configuration
 ├── package.json          # Dependencies & scripts
 ├── postcss.config.js     # PostCSS configuration
 ├── tailwind.config.js    # Tailwind CSS configuration
 ├── tsconfig.json         # TypeScript configuration
-└── README.md             # This file
+├── README.md             # This file
+├── SUPABASE_SETUP.md     # Detailed Supabase setup guide
+├── AUTH_SETUP.md         # Authentication setup guide
+└── DATABASE_IMPLEMENTATION.md  # Database implementation details
 ```
 
 ### Key Files Explained
@@ -340,11 +451,18 @@ EnergyAnalysisViz/
 - **`app/dashboard/page.tsx`**: Dashboard page route
 - **`app/upload/page.tsx`**: Upload page route
 - **`app/api/chat/`**: Chat API route handler (Next.js API route)
+- **`app/api/upload/`**: File upload API route with Supabase Storage integration
+- **`app/api/test-db/`**: Database connection test endpoint
+- **`db/schema.ts`**: Drizzle ORM schema definitions for type-safe queries
+- **`db/supabase-schema.sql`**: SQL schema file for creating database tables
+- **`lib/supabase/client.ts`**: Client-side Supabase auth helpers
+- **`lib/supabase/auth.ts`**: Server-side Supabase auth helpers
 - **`components/Landing.tsx`**: Landing page with interactive visualizations
 - **`components/Dashboard.tsx`**: Main dashboard component
 - **`components/EnergyChart.tsx`**: Interactive energy consumption chart
 - **`components/Chatbot.tsx`**: Floating chatbot UI component
 - **`components/EnergyDashboard.tsx`**: Core dashboard logic and visualizations
+- **`components/Upload.tsx`**: File upload component with authentication
 
 ---
 
@@ -354,12 +472,18 @@ EnergyAnalysisViz/
 
 Create a `.env.local` file in the project root:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `OPENAI_API_KEY` | Your OpenAI API key | **Required** |
-| `OPENAI_MODEL` | OpenAI model to use | `gpt-4o-mini` |
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | ✅ Yes |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous/public key | ✅ Yes |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-side only) | ✅ Yes |
+| `DATABASE_URL` | PostgreSQL connection string | ✅ Yes |
+| `OPENAI_API_KEY` | Your OpenAI API key | ✅ Yes |
+| `OPENAI_MODEL` | OpenAI model to use | No (default: `gpt-4o-mini`) |
 
-> **Note**: `.env.local` is automatically ignored by git. Never commit your API keys.
+> **Note**: `.env.local` is automatically ignored by git. Never commit your API keys or service role keys.
+
+See `SUPABASE_SETUP.md` for detailed setup instructions.
 
 ### Tailwind CSS Configuration
 
@@ -392,6 +516,9 @@ Modify as needed for your deployment requirements.
 | `npm run build` | Build the application for production |
 | `npm run start` | Start the production server (after `npm run build`) |
 | `npm run lint` | Run ESLint to check for code issues |
+| `npm run db:generate` | Generate Drizzle migration files |
+| `npm run db:push` | Push schema changes to database |
+| `npm run db:studio` | Open Drizzle Studio for database inspection |
 
 ### Example Workflow
 
@@ -414,6 +541,76 @@ npm run start
 - **Production**: Your deployed Next.js application URL
 
 ### Endpoints
+
+#### `POST /api/upload`
+
+Upload a CSV file to Supabase Storage and save metadata to the database.
+
+**Authentication**: Required (user must be logged in)
+
+**Request**: 
+- Content-Type: `multipart/form-data`
+- Body: FormData with `file` field
+
+**Response:**
+```json
+{
+  "id": 1,
+  "userId": "user-uuid",
+  "fileName": "energy_data.csv",
+  "filePath": "user-uuid/1234567890-energy_data.csv",
+  "fileSize": 1024,
+  "uploadedAt": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**Status Codes:**
+- `201`: File uploaded successfully
+- `400`: Bad request (missing file or invalid format)
+- `401`: Unauthorized (user not authenticated)
+- `500`: Server error
+
+#### `GET /api/upload`
+
+Retrieve all files uploaded by the authenticated user.
+
+**Authentication**: Required
+
+**Response:**
+```json
+{
+  "files": [
+    {
+      "id": 1,
+      "userId": "user-uuid",
+      "fileName": "energy_data.csv",
+      "filePath": "user-uuid/1234567890-energy_data.csv",
+      "fileSize": 1024,
+      "uploadedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+**Status Codes:**
+- `200`: Success
+- `401`: Unauthorized (user not authenticated)
+- `500`: Server error
+
+#### `GET /api/test-db`
+
+Test database connection and verify Supabase setup.
+
+**Response:**
+```json
+{
+  "data": [...],
+  "error": null
+}
+```
+
+**Status Codes:**
+- `200`: Success (database connected)
 
 #### `POST /api/chat`
 
@@ -462,6 +659,10 @@ Next.js applications are optimized for Vercel deployment:
    - Vercel will auto-detect Next.js
 
 2. **Configure environment variables:**
+   - Add `NEXT_PUBLIC_SUPABASE_URL` in Vercel dashboard
+   - Add `NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel dashboard
+   - Add `SUPABASE_SERVICE_ROLE_KEY` in Vercel dashboard
+   - Add `DATABASE_URL` in Vercel dashboard
    - Add `OPENAI_API_KEY` in Vercel dashboard
    - Add `OPENAI_MODEL` (optional, defaults to `gpt-4o-mini`)
 
@@ -485,6 +686,7 @@ vercel
    - Publish directory: `.next`
 
 2. **Environment variables:**
+   - Add all Supabase environment variables (see Configuration section)
    - Add `OPENAI_API_KEY` in Netlify dashboard
 
 3. **Deploy:**
@@ -539,7 +741,13 @@ CMD ["node", "server.js"]
 
 ### Production Checklist
 
+- [ ] Set all Supabase environment variables in your deployment platform
 - [ ] Set `OPENAI_API_KEY` in your deployment platform's environment variables
+- [ ] Run database migrations (`npm run db:push`) or use SQL files
+- [ ] Verify RLS policies are enabled in Supabase
+- [ ] Create `csv_uploads` storage bucket in Supabase
+- [ ] Test authentication flow (sign up/sign in)
+- [ ] Test file upload functionality
 - [ ] Enable HTTPS (automatic on Vercel/Netlify)
 - [ ] Configure custom domain (optional)
 - [ ] Set up error logging and monitoring
@@ -592,10 +800,38 @@ CMD ["node", "server.js"]
 **Problem**: CSV file upload doesn't work or data isn't parsed correctly.
 
 **Solutions**:
+- Verify user is authenticated (check if logged in)
 - Verify CSV format matches expected structure
 - Check browser console for parsing errors
 - Ensure file is valid CSV (comma-separated)
+- Verify Supabase Storage bucket `csv_uploads` exists
+- Check that RLS policies are set up correctly
+- Verify environment variables are set correctly
 - Try a different CSV file to isolate the issue
+
+#### Authentication Issues
+
+**Problem**: User cannot sign in or upload files.
+
+**Solutions**:
+- Verify `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set
+- Check Supabase Dashboard > Authentication > Providers (ensure Email is enabled)
+- Verify user exists in Supabase Auth (Dashboard > Authentication > Users)
+- Check browser console for auth errors
+- Ensure cookies are enabled in browser
+- Verify database trigger syncs auth users to `users` table (if using trigger)
+
+#### Database Connection Issues
+
+**Problem**: Database queries fail or return errors.
+
+**Solutions**:
+- Verify `DATABASE_URL` is correct in `.env.local`
+- Check that tables exist (run `db/supabase-schema.sql` if needed)
+- Verify RLS policies are enabled (run `db/supabase-rls-policies.sql`)
+- Test connection with `/api/test-db` endpoint
+- Check Supabase Dashboard > Database for connection status
+- Ensure IP restrictions allow your connection (if enabled)
 
 #### Build Errors
 
@@ -627,6 +863,14 @@ If you encounter issues not covered here:
 3. Verify all environment variables are set correctly
 4. Ensure all dependencies are installed
 5. Check that both frontend and backend are running
+
+---
+
+## Additional Resources
+
+- **[SUPABASE_SETUP.md](SUPABASE_SETUP.md)**: Complete Supabase setup guide with SQL scripts
+- **[AUTH_SETUP.md](AUTH_SETUP.md)**: Authentication setup and usage guide
+- **[DATABASE_IMPLEMENTATION.md](DATABASE_IMPLEMENTATION.md)**: Database architecture and implementation details
 
 ---
 

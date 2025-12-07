@@ -37,7 +37,18 @@ This document summarizes the database layer implementation for the Energy Analys
 
 6. **`lib/upload.ts`** - Client-side upload helper
    - `uploadCsvFile()`: Upload file and get metadata
-   - `getCurrentUserId()`: Placeholder for auth integration (TODO)
+   - Re-exports `getCurrentUserId()` and `getCurrentUser()` from auth helpers
+
+### Authentication
+
+7. **`lib/supabase/client.ts`** - Client-side auth helpers
+   - `getCurrentUserId()`: Gets authenticated user ID (browser)
+   - `getCurrentUser()`: Gets authenticated user object (browser)
+   - `signIn()`, `signUp()`, `signOut()`: Auth functions
+
+8. **`lib/supabase/auth.ts`** - Server-side auth helpers
+   - `getCurrentUserId()`: Gets authenticated user ID from session (server)
+   - `getCurrentUser()`: Gets authenticated user from session (server)
 
 ### Documentation
 
@@ -52,10 +63,18 @@ This document summarizes the database layer implementation for the Energy Analys
 1. **`components/Upload.tsx`**
    - Added upload status tracking (uploading/success/error)
    - Integrated `uploadCsvFile()` helper function
+   - Uses `getCurrentUserId()` for authentication
+   - Shows error if user is not authenticated
    - Added UI feedback for upload status
    - Maintains backward compatibility with existing sessionStorage workflow
 
-2. **`package.json`**
+2. **`app/api/upload/route.ts`**
+   - Updated to use server-side `getCurrentUserId()` for authentication
+   - Verifies authentication before processing uploads
+   - Returns 401 if user is not authenticated
+   - More secure - doesn't trust client-provided userId
+
+3. **`package.json`**
    - Added dependencies:
      - `@supabase/supabase-js`: Supabase client library
      - `drizzle-orm`: ORM for database operations
@@ -107,10 +126,13 @@ This document summarizes the database layer implementation for the Energy Analys
 ## Workflow
 
 1. **User uploads CSV file**
+   - User must be authenticated (signed in)
    - File selected in Upload component
-   - On form submit, `uploadCsvFile()` is called
+   - On form submit, `getCurrentUserId()` verifies authentication
+   - `uploadCsvFile()` is called (no userId parameter needed)
+   - API route verifies authentication server-side
    - File is uploaded to Supabase Storage bucket `csv_uploads`
-   - File metadata is inserted into `files` table
+   - File metadata is inserted into `files` table with authenticated user ID
    - File ID is stored in sessionStorage for dashboard reference
 
 2. **File storage structure**
@@ -136,8 +158,10 @@ See `SUPABASE_SETUP.md` for complete RLS policy SQL scripts.
 ### API Route Security
 
 - The upload API route uses `supabaseAdmin` (service role) for storage operations
-- In production, add authentication middleware to verify user identity
-- Currently accepts `userId` from request - should be replaced with session-based auth
+- Authentication is verified server-side using `getCurrentUserId()` from `lib/supabase/auth.ts`
+- User ID is retrieved from auth session (cookies), not from request body
+- Returns 401 Unauthorized if user is not authenticated
+- RLS policies ensure users can only access their own data
 
 ## Next Steps
 
@@ -167,13 +191,14 @@ See `SUPABASE_SETUP.md` for complete RLS policy SQL scripts.
 
 ### Integration Tasks
 
-1. **Replace placeholder user ID**:
-   - Update `components/Upload.tsx` line with `const userId = 'temp-user-id'`
-   - Replace with actual auth implementation (see `lib/upload.ts` for examples)
+1. **Enable Supabase Authentication**:
+   - Go to Supabase Dashboard > Authentication > Providers
+   - Enable Email provider
+   - See `AUTH_SETUP.md` for detailed setup
 
-2. **Add authentication middleware**:
-   - Verify user identity in API routes
-   - Get userId from auth session instead of request body
+2. **Sync Auth Users** (Optional but recommended):
+   - Run the database trigger SQL to auto-create user records
+   - See `SUPABASE_SETUP.md` section 6 for SQL script
 
 3. **Dashboard creation**:
    - Create API route to save dashboard records
@@ -182,14 +207,29 @@ See `SUPABASE_SETUP.md` for complete RLS policy SQL scripts.
 
 ## Testing
 
-1. Start development server: `npm run dev`
-2. Navigate to `/upload` page
-3. Upload a CSV file
-4. Verify:
-   - File appears in Supabase Storage
-   - Metadata appears in `files` table
-   - Upload status shows success in UI
-   - File ID is stored in sessionStorage
+1. **Test database connection**:
+   ```bash
+   npm run dev
+   # Visit http://localhost:3000/api/test-db
+   ```
+
+2. **Test authentication**:
+   - Create a test user in Supabase Dashboard or use sign-up
+   - Sign in to the application
+   - Verify user ID is retrieved correctly
+
+3. **Test file upload**:
+   - Navigate to `/upload` page (must be authenticated)
+   - Upload a CSV file
+   - Verify:
+     - File appears in Supabase Storage
+     - Metadata appears in `files` table with correct user_id
+     - Upload status shows success in UI
+     - File ID is stored in sessionStorage
+
+4. **Test RLS policies**:
+   - Sign in as different user
+   - Try to access files - should only see own files
 
 ## Production Deployment
 
@@ -224,8 +264,17 @@ Ensure `csv_uploads` bucket exists in production Supabase project.
 
 ## Notes
 
+- **Authentication is fully integrated** - Users must be logged in to upload files
 - The implementation maintains backward compatibility with the existing sessionStorage-based workflow
 - Files are stored in Supabase Storage AND processed locally for immediate dashboard viewing
 - The `files` table serves as a permanent record of uploaded files
+- User ID is retrieved from auth session on both client and server for security
+- RLS policies ensure data isolation between users
 - Future enhancements can include file versioning, sharing, and advanced dashboard management
+
+## Related Documentation
+
+- **[SUPABASE_SETUP.md](../SUPABASE_SETUP.md)**: Complete Supabase setup guide
+- **[AUTH_SETUP.md](../AUTH_SETUP.md)**: Authentication setup and usage guide
+- **[README.md](../README.md)**: Main project documentation
 
